@@ -492,6 +492,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     
     // Update pin renderer
     pinNode->setMVP(mvp);
+    pinNode->setViewDir(cameraPos.normalized());
     pinNode->setCameraDistance(dist);
     pinNode->setCameraPosition(cameraPos);
     pinNode->setHeadScale(static_cast<float>(m_pinHeadSize));
