@@ -2,12 +2,14 @@
 #include "Utils.h"
 #include <QFile>
 #include <QDebug>
+#include <QDebug>
+
+static const int MAX_SATELLITES = 64;
+static const int UNIFORM_ALIGNMENT = 256;  // Typical GPU alignment for dynamic uniforms
 
 SatelliteRenderer::SatelliteRenderer() = default;
 
-SatelliteRenderer::~SatelliteRenderer() {
-    releaseResources();
-}
+SatelliteRenderer::~SatelliteRenderer() { releaseResources(); }
 
 void SatelliteRenderer::releaseResources() {
     delete m_pipeline;
@@ -68,27 +70,11 @@ void SatelliteRenderer::render(const RenderState* state) {
         m_vertexDataUploaded = true;
     }
     
-    // Set viewport
-    const QSize rtSize = rt->pixelSize();
-    cb->setViewport(QRhiViewport(0, 0, rtSize.width(), rtSize.height()));
-    
-    // Bind pipeline
-    cb->setGraphicsPipeline(m_pipeline);
-    
-    // Bind vertex buffer
-    if (m_vertexBuffer) {
-        const QRhiCommandBuffer::VertexInput vb[] = {
-            { m_vertexBuffer, 0 }
-        };
-        cb->setVertexInput(0, 1, vb);
-    }
-    
-    // Draw each satellite - update uniform and draw one at a time
+    // Prepare uniform data for all satellites
+    m_uniformDataCache.resize(m_satellites.size());
     for (size_t i = 0; i < m_satellites.size(); ++i) {
         const auto& sat = m_satellites[i];
-        
-        // Update uniform buffer directly
-        UniformData uniformData;
+        UniformData& uniformData = m_uniformDataCache[i];
         memset(&uniformData, 0, sizeof(UniformData));
         
         // Calculate satellite position
@@ -105,7 +91,7 @@ void SatelliteRenderer::render(const RenderState* state) {
         
         // Scale based on distance
         float distToCam = (m_cameraPos - pos).length();
-        float scale = 100.0f * sat.size * (distToCam / Utils::CAMERA_DISTANCE);
+        float scale = 150.0f * sat.size * (distToCam / Utils::CAMERA_DISTANCE);
         
         // Build model matrix
         QMatrix4x4 model;
@@ -131,17 +117,71 @@ void SatelliteRenderer::render(const RenderState* state) {
         uniformData.time = m_time;
         uniformData.size = sat.size;
         
+        // Padding for std140 alignment
+        uniformData._pad0 = 0;
+        uniformData._pad1 = 0;
+        uniformData._pad2 = 0;
+        
         // Wave color
         uniformData.waveColor[0] = sat.waveColor.redF();
         uniformData.waveColor[1] = sat.waveColor.greenF();
         uniformData.waveColor[2] = sat.waveColor.blueF();
         
-        // Update and draw
-        QRhiResourceUpdateBatch* rub = r->nextResourceUpdateBatch();
-        rub->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &uniformData);
-        cb->resourceUpdate(rub);
+        // Calculate arc angle pointing toward globe center
+        // Direction from satellite to globe center
+        QVector3D toGlobe = (-pos).normalized();
         
-        cb->setShaderResources(m_shaderBindings);
+        // Project onto billboard's 2D plane
+        // Billboard's X axis = right, Y axis = up
+        // But shader UV has Y inverted (0 at top, 1 at bottom)
+        float localX = QVector3D::dotProduct(toGlobe, right);
+        float localY = QVector3D::dotProduct(toGlobe, up);
+        
+        // In shader: uv.y = 0 at top, 1 at bottom
+        // After uv*2-1: -1 at top, +1 at bottom
+        // So shader +Y = down = -up in world space
+        uniformData.arcAngle = atan2(-localY, localX);
+        
+        // Debug first frame
+        static bool debugOnce = true;
+        if (debugOnce && i == 0) {
+            qDebug() << "Satellite 0:";
+            qDebug() << "  pos:" << pos;
+            qDebug() << "  right:" << right << "up:" << up;
+            qDebug() << "  toGlobe:" << toGlobe;
+            qDebug() << "  localX:" << localX << "localY:" << localY;
+            qDebug() << "  arcAngle:" << uniformData.arcAngle << "(" << (uniformData.arcAngle * 180.0 / M_PI) << "deg)";
+            debugOnce = false;
+        }
+    }
+    
+    // Upload ALL uniform data in ONE batch before drawing
+    QRhiResourceUpdateBatch* rub = r->nextResourceUpdateBatch();
+    for (size_t i = 0; i < m_uniformDataCache.size(); ++i) {
+        rub->updateDynamicBuffer(m_uniformBuffer, i * UNIFORM_ALIGNMENT, 
+                                 sizeof(UniformData), &m_uniformDataCache[i]);
+    }
+    cb->resourceUpdate(rub);
+    
+    // Set viewport
+    const QSize rtSize = rt->pixelSize();
+    cb->setViewport(QRhiViewport(0, 0, rtSize.width(), rtSize.height()));
+    
+    // Bind pipeline
+    cb->setGraphicsPipeline(m_pipeline);
+    
+    // Bind vertex buffer
+    if (m_vertexBuffer) {
+        const QRhiCommandBuffer::VertexInput vb[] = {
+            { m_vertexBuffer, 0 }
+        };
+        cb->setVertexInput(0, 1, vb);
+    }
+    
+    // Draw each satellite with dynamic offset
+    for (size_t i = 0; i < m_satellites.size(); ++i) {
+        QRhiCommandBuffer::DynamicOffset dynOff = { 0, static_cast<quint32>(i * UNIFORM_ALIGNMENT) };
+        cb->setShaderResources(m_shaderBindings, 1, &dynOff);
         cb->draw(6, 1, 0, 0);
     }
 }
@@ -158,20 +198,23 @@ void SatelliteRenderer::initializeRHI(QRhi* rhi) {
         return;
     }
     
-    // Create uniform buffer
+    // Create uniform buffer with space for all satellites
+    // Use UNIFORM_ALIGNMENT * MAX_SATELLITES for buffer size
     m_uniformBuffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 
-                                       sizeof(UniformData));
+                                       UNIFORM_ALIGNMENT * MAX_SATELLITES);
     if (!m_uniformBuffer->create()) {
         qWarning() << "Failed to create satellite uniform buffer";
         return;
     }
     
-    // Create shader bindings
+    // Create shader bindings with dynamic offset
     m_shaderBindings = rhi->newShaderResourceBindings();
     m_shaderBindings->setBindings({
-        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage | 
-                                                     QRhiShaderResourceBinding::FragmentStage, 
-                                                  m_uniformBuffer)
+        QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
+            0, 
+            QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage, 
+            m_uniformBuffer,
+            sizeof(UniformData))
     });
     
     if (!m_shaderBindings->create()) {
@@ -261,60 +304,6 @@ void SatelliteRenderer::createPipeline(QRhi* rhi) {
     }
 }
 
-void SatelliteRenderer::updateUniformBuffer(QRhiResourceUpdateBatch* batch, const SatelliteData& sat) {
-    UniformData uniformData;
-    memset(&uniformData, 0, sizeof(UniformData));
-    
-    // Calculate satellite position
-    QVector3D pos = Utils::latLonToXYZ(sat.lat, sat.lon, Utils::GLOBE_RADIUS * sat.altitude);
-    
-    // Build a billboard matrix that faces the camera
-    QVector3D toCamera = (m_cameraPos - pos).normalized();
-    
-    // Handle edge case when looking straight down
-    QVector3D up(0, 1, 0);
-    QVector3D right = QVector3D::crossProduct(up, toCamera).normalized();
-    if (right.length() < 0.01f) {
-        right = QVector3D(1, 0, 0);
-    }
-    up = QVector3D::crossProduct(toCamera, right).normalized();
-    
-    // Scale based on distance for consistent screen size
-    float distToCam = (m_cameraPos - pos).length();
-    float scale = 100.0f * sat.size * (distToCam / Utils::CAMERA_DISTANCE);
-    
-    // Build model matrix
-    QMatrix4x4 model;
-    model.setColumn(0, QVector4D(right * scale, 0));
-    model.setColumn(1, QVector4D(up * scale, 0));
-    model.setColumn(2, QVector4D(toCamera, 0));
-    model.setColumn(3, QVector4D(pos, 1));
-    
-    QMatrix4x4 mvp = m_mvp * model;
-    
-    // Copy MVP
-    const float* mvpData = mvp.constData();
-    for (int i = 0; i < 16; ++i) {
-        uniformData.mvp[i] = mvpData[i];
-    }
-    
-    // Position
-    uniformData.position[0] = pos.x();
-    uniformData.position[1] = pos.y();
-    uniformData.position[2] = pos.z();
-    
-    // Animation
-    uniformData.time = m_time;
-    uniformData.size = sat.size;
-    
-    // Wave color
-    uniformData.waveColor[0] = sat.waveColor.redF();
-    uniformData.waveColor[1] = sat.waveColor.greenF();
-    uniformData.waveColor[2] = sat.waveColor.blueF();
-    
-    batch->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &uniformData);
-}
-
 void SatelliteRenderer::setSatellites(const std::vector<SatelliteData>& satellites) {
     m_satellites = satellites;
     m_needsPipelineRebuild = true;
@@ -323,5 +312,6 @@ void SatelliteRenderer::setSatellites(const std::vector<SatelliteData>& satellit
 
 void SatelliteRenderer::clearSatellites() {
     m_satellites.clear();
+    m_uniformDataCache.clear();
     m_needsPipelineRebuild = true;
 }

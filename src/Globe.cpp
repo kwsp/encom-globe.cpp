@@ -204,6 +204,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     
     // Update satellite renderer
     satNode->setMVP(mvp);
+    satNode->setView(view);
     satNode->setTime(static_cast<float>(currentTime));
     satNode->setCameraPosition(cameraPos);
     satNode->setCameraAngle(cameraAngle);

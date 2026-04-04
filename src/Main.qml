@@ -27,7 +27,10 @@ ApplicationWindow {
             repeat: false
             onTriggered: {
                 globe.addSatellite(40.7128, -74.0060, 1.2)  // New York
-                globe.addSatellite(-33.8688, 151.2093, 1.25) // Sydney - opposite side
+                // globe.addSatellite(51.5074, -0.1278, 1.3)   // London
+                // globe.addSatellite(35.6762, 139.6503, 1.15) // Tokyo
+                globe.addSatellite(-33.8688, 151.2093, 1.25) // Sydney
+                // globe.addSatellite(55.7558, 37.6173, 1.2)   // Moscow
             }
         }
         

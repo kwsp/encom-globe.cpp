@@ -5,7 +5,6 @@
 #include <QMatrix4x4>
 #include <QColor>
 #include <vector>
-#include <memory>
 
 struct SatelliteData {
     float lat;
@@ -28,10 +27,11 @@ public:
     void prepare() override {}
     void render(const RenderState* state) override;
     void releaseResources() override;
-    QRectF rect() const override { return QRectF(0, 0, m_size.width(), m_size.height()); }
+    QRectF rect() const override { return {0, 0, m_size.width(), m_size.height()}; }
 
     // Data setters
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
+    void setView(const QMatrix4x4& view) { m_view = view; }
     void setTime(float time) { m_time = time; }
     void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
     void setCameraAngle(float angle) { m_cameraAngle = angle; }
@@ -44,7 +44,6 @@ public:
 private:
     void initializeRHI(QRhi* rhi);
     void createPipeline(QRhi* rhi);
-    void updateUniformBuffer(QRhiResourceUpdateBatch* batch, const SatelliteData& sat);
 
     // RHI resources
     QRhiGraphicsPipeline* m_pipeline = nullptr;
@@ -64,17 +63,22 @@ private:
     
     // Uniform data per satellite (std140 aligned)
     struct UniformData {
-        float mvp[16];
-        float position[3];
-        float time;
-        float size;
-        float waveColor[3];
-        float padding;
+        float mvp[16];        // offset 0, 64 bytes
+        float position[3];    // offset 64, 12 bytes
+        float time;           // offset 76, 4 bytes
+        float size;           // offset 80, 4 bytes
+        float _pad0;          // offset 84, 4 bytes
+        float _pad1;          // offset 88, 4 bytes
+        float _pad2;          // offset 92, 4 bytes
+        float waveColor[3];   // offset 96, 12 bytes
+        float arcAngle;       // offset 108, 4 bytes
     };
 
     // Data
     std::vector<SatelliteData> m_satellites;
+    std::vector<UniformData> m_uniformDataCache;  // Cache for uniform data
     QMatrix4x4 m_mvp;
+    QMatrix4x4 m_view;
     QVector3D m_cameraPos;
     float m_cameraAngle = 0.0f;
     float m_time = 0.0f;

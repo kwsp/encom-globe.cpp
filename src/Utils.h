@@ -7,12 +7,12 @@
 
 namespace Utils {
 
-constexpr float GLOBE_RADIUS = 500.0f;
-constexpr float CAMERA_DISTANCE = 1700.0f;
+constexpr float GLOBE_RADIUS = 500.0F;
+constexpr float CAMERA_DISTANCE = 1700.0F;
 
 inline QVector3D latLonToXYZ(float lat, float lon, float scale = GLOBE_RADIUS) {
-    const float phi = qDegreesToRadians(90.0f - lat);
-    const float theta = qDegreesToRadians(180.0f - lon);
+    const float phi = qDegreesToRadians(90.0F - lat);
+    const float theta = qDegreesToRadians(180.0F - lon);
     return {
         scale * std::sin(phi) * std::cos(theta),
         scale * std::cos(phi),
