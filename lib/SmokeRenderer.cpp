@@ -57,9 +57,14 @@ void SmokeRenderer::render(const RenderState* state) {
     memset(&u, 0, sizeof(UniformData));
     const float* mData = m_mvp.constData();
     for (int i = 0; i < 16; ++i) u.mvp[i] = mData[i];
-    u.color[0] = 0.8f; u.color[1] = 0.8f; u.color[2] = 0.8f; u.color[3] = 1.0f; 
+    
+    u.viewDir[0] = m_viewDir.x();
+    u.viewDir[1] = m_viewDir.y();
+    u.viewDir[2] = m_viewDir.z();
+    
     u.currentTime = m_time;
-    u.cameraDistance = m_cameraDistance;
+    u.color[0] = 0.8f; u.color[1] = 0.8f; u.color[2] = 0.8f; u.color[3] = 1.0f; 
+    
     rub->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &u);
 
     // Update vertex buffer if needed
@@ -70,8 +75,11 @@ void SmokeRenderer::render(const RenderState* state) {
 
     cb->resourceUpdate(rub);
 
-    const QSize rtSize = rt->pixelSize();
-    cb->setViewport(QRhiViewport(0, 0, rtSize.width(), rtSize.height()));
+    // Set viewport and scissor
+    cb->setViewport(QRhiViewport(m_viewportRect.x(), m_viewportRect.y(), 
+                                  m_viewportRect.width(), m_viewportRect.height()));
+    cb->setScissor(QRhiScissor(m_viewportRect.x(), m_viewportRect.y(), 
+                                m_viewportRect.width(), m_viewportRect.height()));
 
     cb->setGraphicsPipeline(m_pipeline);
     const QRhiCommandBuffer::VertexInput vb[] = { { m_vertexBuffer, 0 } };

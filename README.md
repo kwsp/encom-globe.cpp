@@ -15,7 +15,8 @@ This project demonstrates how to build complex 3D visualizations in Qt, leveragi
     - **Intro Animation**: Synchronized swirling lines and globe materialization.
 - **Hybrid Rendering**: 3D elements rendered via RHI, while labels use native Qt Quick `Text` items for pixel-perfect clarity.
 - **Interactive**: Full mouse support for rotation (drag), tilt (drag), and zoom (scroll).
-- ️ **Configurable**: Exposes a rich QML API for colors, sizes, and animation durations.
+- **Fully Responsive**: Automatically adapts to its QML container size and position. Supports complex layouts, High-DPI (Retina/4K) displays, and live resizing.
+- **Configurable**: Exposes a rich QML API for colors, sizes, and animation durations.
 
 ## Building and Running
 
@@ -40,6 +41,24 @@ cmake --build .
 # Linux/Windows
 ./src/EncomGlobe
 ```
+
+## Technical Notes & Enhancements
+
+This C++ port introduces several technical improvements over the original JavaScript implementation:
+
+### 1. Normalized Depth Fog
+The original implementation used absolute view-space depth for fog, which caused the fade effect to shift or break when zooming (changing camera distance). 
+- **Enhancement**: This port uses **Normalized Depth Fog** ($vRelativeDepth = \text{dot}(\text{pos}, \text{viewDir})$). The fade always starts from the globe's center toward the back, making the visual effect invariant to zoom level or window resolution.
+
+### 2. Alpha-Based Transparency
+While the original mixed colors with black to simulate fog, this port directly modulates the **alpha channel**. This allows the globe to be rendered cleanly over any background color while maintaining the "fade into the void" aesthetic.
+
+### 3. Synchronized Smoke Occlusion
+A common bug in the original was smoke particles being visible through the "back" of the globe tiles.
+- **Fix**: By using a slightly more aggressive fog cutoff for the `SmokeRenderer` than the `GlobeRenderer`, particles are guaranteed to vanish before they reach the back side, ensuring perfect occlusion without expensive depth sorting.
+
+### 4. Optimized Multi-Instance Drawing
+Instead of updating uniform buffers once per object (which is slow in modern APIs like Metal), this port uses **Dynamic Uniform Offsets**. All instance data is uploaded in a single block, and each draw call simply points to a different offset in GPU memory.
 
 ## Integration in C++/CMake
 

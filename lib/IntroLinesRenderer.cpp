@@ -96,17 +96,24 @@ void IntroLinesRenderer::render(const RenderState* state) {
     memset(&u, 0, sizeof(UniformData));
     const float* mData = m_mvp.constData();
     for (int i = 0; i < 16; ++i) u.mvp[i] = mData[i];
+    
+    u.viewDir[0] = m_viewDir.x();
+    u.viewDir[1] = m_viewDir.y();
+    u.viewDir[2] = m_viewDir.z();
+    
     u.opacity = opacity;
     u.rotation = rotation;
     u.currentTime = m_time;
     u.duration = m_duration;
-    u.cameraDistance = m_cameraDistance;
     rub->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &u);
 
     cb->resourceUpdate(rub);
 
-    const QSize rtSize = rt->pixelSize();
-    cb->setViewport(QRhiViewport(0, 0, rtSize.width(), rtSize.height()));
+    // Set viewport and scissor
+    cb->setViewport(QRhiViewport(m_viewportRect.x(), m_viewportRect.y(), 
+                                  m_viewportRect.width(), m_viewportRect.height()));
+    cb->setScissor(QRhiScissor(m_viewportRect.x(), m_viewportRect.y(), 
+                                m_viewportRect.width(), m_viewportRect.height()));
 
     cb->setGraphicsPipeline(m_pipeline);
     const QRhiCommandBuffer::VertexInput vb[] = { { m_vertexBuffer, 0 } };

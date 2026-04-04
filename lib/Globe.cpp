@@ -9,6 +9,7 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QSGNode>
+#include <QQuickWindow>
 
 Globe::Globe(QQuickItem* parent)
     : QQuickItem(parent)
@@ -427,13 +428,26 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     
     // Use the item's size for aspect ratio
     QMatrix4x4 projection;
-    const float aspect = width() > 0 && height() > 0 ? static_cast<float>(width() / height()) : 1.0f;
+    const float aspect = (width() > 0 && height() > 0) ? 
+        static_cast<float>(width()) / static_cast<float>(height()) : 1.0f;
     projection.perspective(50.0f, aspect, 1.0f, dist + 500);
     
     QMatrix4x4 mvp = projection * view;
     
+    // Calculate screen-space rectangle in physical pixels
+    const qreal dpr = window()->devicePixelRatio();
+    const QRectF screenRect = mapRectToScene(QRectF(0, 0, width(), height()));
+    const QRect pixelRect = QRect(
+        qRound(screenRect.x() * dpr),
+        qRound(screenRect.y() * dpr),
+        qRound(screenRect.width() * dpr),
+        qRound(screenRect.height() * dpr)
+    );
+    
     // Update globe renderer
     globeNode->setMVP(mvp);
+    globeNode->setViewDir(cameraPos.normalized());
+    globeNode->setViewportRect(pixelRect);
     globeNode->setCurrentTime(static_cast<float>(currentTime));
     globeNode->setIntroDuration(static_cast<float>(m_introDuration));
     globeNode->setIntroAltitude(1.10f);
@@ -451,6 +465,8 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     // Update satellite renderer
     satNode->setMVP(mvp);
     satNode->setView(view);
+    satNode->setViewDir(cameraPos.normalized());
+    satNode->setViewportRect(pixelRect);
     satNode->setTime(static_cast<float>(currentTime));
     satNode->setCameraDistance(dist);
     satNode->setCameraPosition(cameraPos);
@@ -470,6 +486,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     pinNode->setCameraDistance(dist);
     pinNode->setCameraPosition(cameraPos);
     pinNode->setHeadScale(static_cast<float>(m_pinHeadSize));
+    pinNode->setViewportRect(pixelRect);
     
     if (m_geometryChanged) {
         pinNode->setSize(QSizeF(width(), height()));
@@ -485,8 +502,10 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     // Update marker renderer
     markerNode->setMVP(mvp);
     markerNode->setCameraPosition(cameraPos);
+    markerNode->setViewDir(cameraPos.normalized());
     markerNode->setCameraDistance(dist);
     markerNode->setSpriteScale(static_cast<float>(m_markerSize));
+    markerNode->setViewportRect(pixelRect);
     
     if (m_geometryChanged) {
         markerNode->setSize(QSizeF(width(), height()));
@@ -499,8 +518,10 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     
     // Update smoke renderer
     smokeNode->setMVP(mvp);
+    smokeNode->setViewDir(cameraPos.normalized());
     smokeNode->setTime(static_cast<float>(currentTime));
     smokeNode->setCameraDistance(dist);
+    smokeNode->setViewportRect(pixelRect);
     
     for (const auto& s : m_newSmokeSources) {
         smokeNode->addSource(s.lat, s.lon, s.alt);
@@ -509,9 +530,11 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     
     // Update intro lines renderer
     introLinesNode->setMVP(mvp);
+    introLinesNode->setViewDir(cameraPos.normalized());
     introLinesNode->setTime(static_cast<float>(currentTime));
     introLinesNode->setDuration(static_cast<float>(m_introDuration));
     introLinesNode->setCameraDistance(dist);
+    introLinesNode->setViewportRect(pixelRect);
     if (m_geometryChanged) {
         introLinesNode->setSize(QSizeF(width(), height()));
     }

@@ -131,7 +131,11 @@ void MarkerRenderer::render(const RenderState* state) {
     memset(&lineUbuf, 0, sizeof(LineUniformData));
     const float* mvpData = m_mvp.constData();
     for (int i = 0; i < 16; ++i) lineUbuf.mvp[i] = mvpData[i];
-    lineUbuf.cameraDistance = m_cameraDistance;
+    
+    lineUbuf.viewDir[0] = m_viewDir.x();
+    lineUbuf.viewDir[1] = m_viewDir.y();
+    lineUbuf.viewDir[2] = m_viewDir.z();
+    
     rub->updateDynamicBuffer(m_lineUniformBuffer, 0, sizeof(LineUniformData), &lineUbuf);
 
     // Update sprite uniforms for each marker
@@ -142,7 +146,7 @@ void MarkerRenderer::render(const RenderState* state) {
         memset(&su, 0, sizeof(SpriteUniformData));
 
         QVector3D pos = Utils::latLonToXYZ(mk.lat, mk.lon, Utils::GLOBE_RADIUS * mk.altitude);
-        
+
         QVector3D toCamera = (m_cameraPos - pos).normalized();
         QVector3D up(0, 1, 0);
         QVector3D right = QVector3D::crossProduct(up, toCamera).normalized();
@@ -165,7 +169,7 @@ void MarkerRenderer::render(const RenderState* state) {
         su.color[0] = mk.color.redF();
         su.color[1] = mk.color.greenF();
         su.color[2] = mk.color.blueF();
-        su.cameraDistance = m_cameraDistance;
+        su.relativeDepth = QVector3D::dotProduct(pos.normalized(), m_viewDir);
 
         rub->updateDynamicBuffer(m_spriteUniformBuffer, i * UNIFORM_ALIGNMENT,
                                  sizeof(SpriteUniformData), &su);
@@ -173,8 +177,14 @@ void MarkerRenderer::render(const RenderState* state) {
 
     cb->resourceUpdate(rub);
 
+    // Set viewport and scissor
+    cb->setViewport(QRhiViewport(m_viewportRect.x(), m_viewportRect.y(), 
+                                  m_viewportRect.width(), m_viewportRect.height()));
+    cb->setScissor(QRhiScissor(m_viewportRect.x(), m_viewportRect.y(), 
+                                m_viewportRect.width(), m_viewportRect.height()));
+
     const QSize rtSize = rt->pixelSize();
-    cb->setViewport(QRhiViewport(0, 0, rtSize.width(), rtSize.height()));
+    // (removed redundant setViewport from here)
 
     // --- Draw arc lines ---
     if (m_lineVertexBuffer && !m_arcs.empty()) {

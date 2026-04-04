@@ -5,15 +5,17 @@ layout(location = 1) in vec3 color;
 layout(location = 2) in float longitude;
 
 layout(std140, binding = 0) uniform buf {
-    mat4 mvp;
-    float opacity;
-    float rotation;
-    float currentTime;
-    float duration;
-    float cameraDistance;
+    mat4 mvp;           // offset 0
+    vec3 viewDir;       // offset 64
+    float opacity;      // offset 76
+    float rotation;     // offset 80
+    float currentTime;  // offset 84
+    float duration;     // offset 88
+    float padding;      // offset 92
 } ubuf;
 
 layout(location = 0) out vec4 vColor;
+layout(location = 1) out float vRelativeDepth;
 
 void main() {
     float s = sin(ubuf.rotation);
@@ -25,6 +27,9 @@ void main() {
         0.0, 0.0, 0.0, 1.0
     );
     
-    gl_Position = ubuf.mvp * rotY * vec4(position, 1.0);
+    vec3 rotatedPos = (rotY * vec4(position, 1.0)).xyz;
+    vRelativeDepth = dot(normalize(rotatedPos), ubuf.viewDir);
+    
+    gl_Position = ubuf.mvp * vec4(rotatedPos, 1.0);
     vColor = vec4(color, ubuf.opacity * 0.8);
 }

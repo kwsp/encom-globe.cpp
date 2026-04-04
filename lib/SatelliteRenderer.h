@@ -33,9 +33,11 @@ public:
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setView(const QMatrix4x4& view) { m_view = view; }
     void setTime(float time) { m_time = time; }
+    void setViewDir(const QVector3D& dir) { m_viewDir = dir; }
     void setCameraDistance(float dist) { m_cameraDistance = dist; }
     void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
     void setCameraAngle(float angle) { m_cameraAngle = angle; }
+    void setViewportRect(const QRect& rect) { m_viewportRect = rect; }
     void setSize(const QSizeF& size) { m_size = size; }
     
     // Satellite management
@@ -68,12 +70,10 @@ private:
         float position[3];    // offset 64, 12 bytes
         float time;           // offset 76, 4 bytes
         float size;           // offset 80, 4 bytes
-        float cameraDistance; // offset 84, 4 bytes
-        float _pad1;          // offset 88, 4 bytes
-        float _pad2;          // offset 92, 4 bytes
+        float viewDir[3];     // offset 84, 12 bytes
         float waveColor[3];   // offset 96, 12 bytes
         float arcAngle;       // offset 108, 4 bytes
-    };
+    };                        // Total: 112 bytes, 16-byte aligned
 
     // Data
     std::vector<SatelliteData> m_satellites;
@@ -81,9 +81,11 @@ private:
     QMatrix4x4 m_mvp;
     QMatrix4x4 m_view;
     QVector3D m_cameraPos;
+    QVector3D m_viewDir;
     float m_cameraDistance = 1700.0f;
     float m_cameraAngle = 0.0f;
     float m_time = 0.0f;
+    QRect m_viewportRect;
     QSizeF m_size;
     
     // Track if satellites changed

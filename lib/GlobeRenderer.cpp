@@ -69,9 +69,11 @@ void GlobeRenderer::render(const RenderState* state) {
     // Set up graphics pipeline
     cb->setGraphicsPipeline(m_pipeline);
     
-    // Use the render target's actual size for viewport
-    const QSize rtSize = rt->pixelSize();
-    cb->setViewport(QRhiViewport(0, 0, rtSize.width(), rtSize.height()));
+    // Use the item's screen-space rectangle for viewport and scissor
+    cb->setViewport(QRhiViewport(m_viewportRect.x(), m_viewportRect.y(), 
+                                  m_viewportRect.width(), m_viewportRect.height()));
+    cb->setScissor(QRhiScissor(m_viewportRect.x(), m_viewportRect.y(), 
+                                m_viewportRect.width(), m_viewportRect.height()));
     
     // Bind shader resources
     cb->setShaderResources(m_shaderBindings);
@@ -92,7 +94,7 @@ void GlobeRenderer::initializeRHI(QRhi* rhi) {
     
     // Create uniform buffer
     m_uniformBuffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, 
-                                       sizeof(float) * 16 + sizeof(float) * 5); // MVP + uniforms
+                                       sizeof(UniformData));
     if (!m_uniformBuffer->create()) {
         qWarning() << "Failed to create uniform buffer";
         return;
@@ -208,31 +210,24 @@ void GlobeRenderer::createPipeline(QRhi* rhi) {
 }
 
 void GlobeRenderer::updateUniformBuffer(QRhiResourceUpdateBatch* batch) {
-    // Pack uniform data: mat4 + 5 floats (with padding for alignment)
-    struct UniformData {
-        float mvp[16];
-        float currentTime;
-        float introDuration;
-        float introAltitude;
-        float cameraDistance;
-        float padding;
-    } uniformData;
-    
-    static_assert(sizeof(UniformData) == sizeof(float) * 21, "UniformData size mismatch");
+    UniformData u;
+    memset(&u, 0, sizeof(UniformData));
     
     // Copy MVP matrix (column-major)
     const float* mvpData = m_mvp.constData();
     for (int i = 0; i < 16; ++i) {
-        uniformData.mvp[i] = mvpData[i];
+        u.mvp[i] = mvpData[i];
     }
     
-    uniformData.currentTime = m_currentTime;
-    uniformData.introDuration = m_introDuration;
-    uniformData.introAltitude = m_introAltitude;
-    uniformData.cameraDistance = Utils::CAMERA_DISTANCE;
-    uniformData.padding = 0.0f;
+    u.viewDir[0] = m_viewDir.x();
+    u.viewDir[1] = m_viewDir.y();
+    u.viewDir[2] = m_viewDir.z();
     
-    batch->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &uniformData);
+    u.currentTime = m_currentTime;
+    u.introDuration = m_introDuration;
+    u.introAltitude = m_introAltitude;
+    
+    batch->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &u);
 }
 
 void GlobeRenderer::setBaseColor(const QString& color) {

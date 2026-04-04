@@ -23,7 +23,8 @@
 - [x] Smoke particle system (GPU-animated particles)
 - [x] Intro lines animation (sweeping lines synced with globe)
 - [x] Color customization API (Q_PROPERTY)
-- [x] Alpha-based Fog system (distance-based transparency)
+- [x] **Normalized Depth Fog**: Resolution-independent alpha fading based on relative depth.
+- [x] **Improved Smoke Occlusion**: Fixed particle trails being visible behind the globe via synced fog logic.
 
 ## Phase 4: Polish ✅
 - [x] Performance optimization (Dynamic uniform offsets)

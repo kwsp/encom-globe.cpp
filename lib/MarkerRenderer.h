@@ -31,8 +31,10 @@ public:
 
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
+    void setViewDir(const QVector3D& dir) { m_viewDir = dir; }
     void setCameraDistance(float dist) { m_cameraDistance = dist; }
     void setSize(const QSizeF& size) { m_size = size; }
+    void setViewportRect(const QRect& rect) { m_viewportRect = rect; }
     void setSpriteScale(float scale) { m_spriteScale = scale; }
     void setMarkers(const std::vector<MarkerData>& markers);
 
@@ -70,15 +72,15 @@ private:
 
     struct LineUniformData {
         float mvp[16];
-        float cameraDistance;
-        float padding[3];
-    };
+        float viewDir[3];
+        float padding;
+    }; // 80 bytes
 
     struct SpriteUniformData {
         float mvp[16];       // offset 0
         float color[3];      // offset 64
-        float cameraDistance; // offset 76
-    };
+        float relativeDepth; // offset 76
+    }; // 80 bytes
 
     // Per-connection arc data
     struct ArcConnection {
@@ -94,8 +96,10 @@ private:
     std::vector<SpriteUniformData> m_spriteUniformCache;
     QMatrix4x4 m_mvp;
     QVector3D m_cameraPos;
+    QVector3D m_viewDir;
     float m_cameraDistance = 1700.0f;
-    QSizeF m_size;
     float m_spriteScale = 1.0f;
+    QRect m_viewportRect;
+    QSizeF m_size;
     int m_lineVertexCapacity = 0;
 };

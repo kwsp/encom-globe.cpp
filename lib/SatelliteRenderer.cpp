@@ -115,11 +115,10 @@ void SatelliteRenderer::render(const RenderState* state) {
         // Animation
         uniformData.time = m_time;
         uniformData.size = sat.size;
-        uniformData.cameraDistance = m_cameraDistance;
         
-        // Padding for std140 alignment
-        uniformData._pad1 = 0;
-        uniformData._pad2 = 0;
+        uniformData.viewDir[0] = m_viewDir.x();
+        uniformData.viewDir[1] = m_viewDir.y();
+        uniformData.viewDir[2] = m_viewDir.z();
         
         // Wave color
         uniformData.waveColor[0] = sat.waveColor.redF();
@@ -150,9 +149,11 @@ void SatelliteRenderer::render(const RenderState* state) {
     }
     cb->resourceUpdate(rub);
     
-    // Set viewport
-    const QSize rtSize = rt->pixelSize();
-    cb->setViewport(QRhiViewport(0, 0, rtSize.width(), rtSize.height()));
+    // Set viewport and scissor
+    cb->setViewport(QRhiViewport(m_viewportRect.x(), m_viewportRect.y(), 
+                                  m_viewportRect.width(), m_viewportRect.height()));
+    cb->setScissor(QRhiScissor(m_viewportRect.x(), m_viewportRect.y(), 
+                                m_viewportRect.width(), m_viewportRect.height()));
     
     // Bind pipeline
     cb->setGraphicsPipeline(m_pipeline);

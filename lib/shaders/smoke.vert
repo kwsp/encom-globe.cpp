@@ -8,12 +8,13 @@ layout(location = 4) in float isActive;
 
 layout(std140, binding = 0) uniform buf {
     mat4 mvp;
-    vec4 color;
-    float currentTime;
-    float cameraDistance;
+    vec3 viewDir;       // offset 64
+    float currentTime;  // offset 76
+    vec4 color;         // offset 80
 } ubuf;
 
 layout(location = 0) out vec4 vColor;
+layout(location = 1) out float vRelativeDepth;
 
 #define PI 3.14159265358979
 #define RADIUS 500.0
@@ -47,6 +48,9 @@ void main() {
     float currentLon = startLon - (dt / 50.0);
     
     vec3 pos = getPos(startLat, currentLon, currentAlt);
+    
+    // Relative depth for fog
+    vRelativeDepth = dot(normalize(pos), ubuf.viewDir);
     
     gl_Position = ubuf.mvp * vec4(pos, 1.0);
     gl_PointSize = 6.0 * opacity;

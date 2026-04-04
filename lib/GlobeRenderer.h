@@ -25,11 +25,13 @@ public:
 
     // Data setters (called from Globe)
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
+    void setViewDir(const QVector3D& dir) { m_viewDir = dir; }
     void setCurrentTime(float time) { m_currentTime = time; }
     void setIntroDuration(float duration) { m_introDuration = duration; }
     void setIntroAltitude(float altitude) { m_introAltitude = altitude; }
     void setBaseColor(const QString& color);
     void setTileData(const QJsonObject& data);
+    void setViewportRect(const QRect& rect) { m_viewportRect = rect; }
     void setSize(const QSizeF& size) { m_size = size; }
 
     // Tick for animation
@@ -61,7 +63,17 @@ private:
     bool m_vertexDataChanged = false;
 
     // Uniform data
+    struct UniformData {
+        float mvp[16];           // 64 bytes
+        float viewDir[3];        // 12 bytes (offset 64)
+        float currentTime;       // 4 bytes (offset 76)
+        float introDuration;     // 4 bytes (offset 80)
+        float introAltitude;     // 4 bytes (offset 84)
+        float padding[2];        // 8 bytes (offset 88)
+    };                           // Total: 96 bytes, 16-byte aligned
+
     QMatrix4x4 m_mvp;
+    QVector3D m_viewDir;
     float m_currentTime = 0.0f;
     float m_introDuration = 2000.0f;
     float m_introAltitude = 1.10f;
@@ -70,4 +82,5 @@ private:
     
     // Size
     QSizeF m_size;
+    QRect m_viewportRect;
 };

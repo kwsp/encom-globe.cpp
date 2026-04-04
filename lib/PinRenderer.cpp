@@ -89,7 +89,9 @@ void PinRenderer::render(const RenderState* state) {
     for (int i = 0; i < 16; ++i) {
         ubuf.mvp[i] = mvpData[i];
     }
-    ubuf.cameraDistance = m_cameraDistance;
+    ubuf.viewDir[0] = m_viewDir.x();
+    ubuf.viewDir[1] = m_viewDir.y();
+    ubuf.viewDir[2] = m_viewDir.z();
     rub->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &ubuf);
     
     // Update top uniforms
@@ -130,7 +132,12 @@ void PinRenderer::render(const RenderState* state) {
         topUbuf.color[0] = pin.color.redF();
         topUbuf.color[1] = pin.color.greenF();
         topUbuf.color[2] = pin.color.blueF();
-        topUbuf.cameraDistance = m_cameraDistance;
+        
+        topUbuf.relativeDepth = QVector3D::dotProduct(pos.normalized(), m_viewDir);
+        
+        topUbuf.viewDir[0] = m_viewDir.x();
+        topUbuf.viewDir[1] = m_viewDir.y();
+        topUbuf.viewDir[2] = m_viewDir.z();
         
         rub->updateDynamicBuffer(m_topUniformBuffer, i * UNIFORM_ALIGNMENT, 
                                  sizeof(TopUniformData), &topUbuf);
@@ -144,9 +151,11 @@ void PinRenderer::render(const RenderState* state) {
     
     cb->resourceUpdate(rub);
     
-    // Set viewport
-    const QSize rtSize = rt->pixelSize();
-    cb->setViewport(QRhiViewport(0, 0, rtSize.width(), rtSize.height()));
+    // Set viewport and scissor
+    cb->setViewport(QRhiViewport(m_viewportRect.x(), m_viewportRect.y(), 
+                                  m_viewportRect.width(), m_viewportRect.height()));
+    cb->setScissor(QRhiScissor(m_viewportRect.x(), m_viewportRect.y(), 
+                                m_viewportRect.width(), m_viewportRect.height()));
     
     // Bind pipeline
     cb->setGraphicsPipeline(m_pipeline);

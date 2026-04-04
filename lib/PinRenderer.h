@@ -29,8 +29,10 @@ public:
 
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
+    void setViewDir(const QVector3D& dir) { m_viewDir = dir; }
     void setCameraDistance(float dist) { m_cameraDistance = dist; }
     void setHeadScale(float scale) { m_headScale = scale; }
+    void setViewportRect(const QRect& rect) { m_viewportRect = rect; }
     void setSize(const QSizeF& size) { m_size = size; }
     void setPins(const std::vector<PinData>& pins);
 
@@ -43,7 +45,7 @@ private:
     QRhiBuffer* m_vertexBuffer = nullptr;
     QRhiBuffer* m_uniformBuffer = nullptr;
     QRhiShaderResourceBindings* m_shaderBindings = nullptr;
-    
+
     // Top sprite resources
     QRhiGraphicsPipeline* m_topPipeline = nullptr;
     QRhiBuffer* m_topVertexBuffer = nullptr;
@@ -59,29 +61,33 @@ private:
         float position[3];
         float color[3];
     };
-    
+
     struct TopVertex {
         float offset[2];
     };
 
     struct UniformData {
         float mvp[16];
-        float cameraDistance;
-        float padding[3];
+        float viewDir[3];
+        float padding;
     }; // 80 bytes
-    
+
     struct TopUniformData {
         float mvp[16];        // offset 0
         float color[3];       // offset 64
-        float cameraDistance; // offset 76
-    }; // Total: 80 bytes, std140 aligned
+        float relativeDepth;  // offset 76
+        float viewDir[3];     // offset 80
+        float padding2;       // offset 92
+    }; // Total: 96 bytes, std140 aligned
 
     std::vector<PinData> m_pins;
     std::vector<TopUniformData> m_topUniformDataCache;
     QMatrix4x4 m_mvp;
     QVector3D m_cameraPos;
+    QVector3D m_viewDir;
     float m_cameraDistance = 1700.0f;
     float m_headScale = 1.0f;
+    QRect m_viewportRect;
     QSizeF m_size;
     int m_vertexCapacity = 0;
 };

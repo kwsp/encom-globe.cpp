@@ -21,7 +21,9 @@ public:
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setTime(float time) { m_time = time; }
     void setDuration(float duration) { m_duration = duration; }
+    void setViewDir(const QVector3D& dir) { m_viewDir = dir; }
     void setCameraDistance(float dist) { m_cameraDistance = dist; }
+    void setViewportRect(const QRect& rect) { m_viewportRect = rect; }
     void setSize(const QSizeF& size) { m_size = size; }
 
 private:
@@ -45,18 +47,20 @@ private:
 
     struct UniformData {
         float mvp[16];
+        float viewDir[3];
         float opacity;
         float rotation;
         float currentTime;
         float duration;
-        float cameraDistance;
-        float padding[3];
-    };
+        float padding;
+    }; // Total: 96 bytes
 
     std::vector<Vertex> m_vertices;
     QMatrix4x4 m_mvp;
+    QVector3D m_viewDir;
     float m_time = 0.0f;
     float m_duration = 2000.0f;
     float m_cameraDistance = 1700.0f;
+    QRect m_viewportRect;
     QSizeF m_size;
 };

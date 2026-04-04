@@ -1,6 +1,7 @@
 #version 440
 
 layout(location = 0) in vec2 vUV;
+layout(location = 1) in float vRelativeDepth;
 
 layout(location = 0) out vec4 fragColor;
 
@@ -9,9 +10,7 @@ layout(std140, binding = 0) uniform buf {
     vec3 position;      // offset 64
     float time;         // offset 76
     float size;         // offset 80
-    float cameraDistance; // offset 84
-    float _pad1;        // offset 88
-    float _pad2;        // offset 92
+    vec3 viewDir;       // offset 84
     vec3 waveColor;     // offset 96
     float arcAngle;     // offset 108
 } ubuf;
@@ -38,15 +37,13 @@ void main()
     float arcBuffer = PI / 16.0;
     float start = -PI + PI / 4.0;
     
-    // Map time to 0..50 frame range
-    float frameCount = numFrames;
-    float timeInFrames = ubuf.time / 80.0; // matched to 80ms per frame from original
+    // Map time to 0..50 frame range (matched to 80ms per frame from original)
+    float timeInFrames = ubuf.time / 80.0;
     float frame = timeInFrames;
-    
-    // Original logic: swirl happens once (frames 0-40), then idle loop (40-50)
     if (frame >= repeatAt) {
         frame = repeatAt + mod(frame - repeatAt, numFrames - repeatAt);
     }
+    
     vec3 color = vec3(0.0);
     float alpha = 0.0;
     
@@ -60,7 +57,7 @@ void main()
     
     // === Shield Arcs (Exact Encom Logic) ===
     float shieldRadius = 0.2;
-    float shieldThickness = 0.06; // increased from 0.035 for better visibility
+    float shieldThickness = 0.06;
     
     for (int n = 0; n < 4; n++) {
         float arcStartAngle = 0.0;
@@ -76,7 +73,6 @@ void main()
             float step = frame - waveStart;
             float movement = distToGo / total;
             float movingStart = start + arcBuffer + movement * step;
-            
             arcStartAngle = max(baseOffset, movingStart);
             arcEndAngle = max(baseOffset + PI / 2.0 - 2.0 * arcBuffer, movingStart + PI / 2.0 - 2.0 * arcBuffer);
         } else if (frame < repeatAt) {
@@ -85,7 +81,6 @@ void main()
             float step = frame - swirlDone;
             float movement = distToGo / total;
             float movingStart = PI / 2.0 + PI / 4.0 + arcBuffer + movement * step;
-            
             arcStartAngle = movingStart;
             arcEndAngle = movingStart + PI / 2.0 - 2.0 * arcBuffer;
         } else if (frame < (numFrames - repeatAt) / 2.0 + repeatAt) {
@@ -94,7 +89,6 @@ void main()
             float step = frame - repeatAt;
             float movement = distToGo / total;
             float movingStart = float(n) * (PI / 2.0) + PI / 4.0 + arcBuffer + movement * step;
-            
             arcStartAngle = movingStart;
             arcEndAngle = movingStart + PI / 2.0 - 2.0 * arcBuffer;
         } else {
@@ -102,7 +96,6 @@ void main()
             arcEndAngle = baseOffset + PI / 2.0 - arcBuffer;
         }
         
-        // Normalize angles and check if current pixel angle is within the arc
         float diff = mod(angle - arcStartAngle, 2.0 * PI);
         float arcLen = mod(arcEndAngle - arcStartAngle, 2.0 * PI);
         
@@ -135,11 +128,7 @@ void main()
         alpha = max(alpha, wave);
     }
     
-    // Fog calculation
-    float depth = gl_FragCoord.z / gl_FragCoord.w;
-    float fogNear = ubuf.cameraDistance;
-    float fogFar = ubuf.cameraDistance + 300.0;
-    float fogFactor = smoothstep(fogNear, fogFar, depth);
-    
+    // Normalized Fog calculation
+    float fogFactor = smoothstep(0.0, -0.6, vRelativeDepth);
     fragColor = vec4(color, alpha * (1.0 - fogFactor));
 }
