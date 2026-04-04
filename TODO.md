@@ -18,10 +18,10 @@
 - [x] Projected 2D text labels via QML Repeater
 - [x] Back-face culling for labels (dot product visibility)
 
-## Phase 3: Markers & Effects
-- [ ] Marker with arc line drawing (connected nodes)
-- [ ] Smoke particle system
-- [ ] Intro lines animation
+## Phase 3: Markers & Effects ✅
+- [x] Marker with arc line drawing (connected nodes)
+- [x] Smoke particle system (animated gray particles ascending from pins)
+- [x] Intro lines animation (sweeping lines synced with the globe)
 - [ ] Color customization API (Q_PROPERTY)
 
 ## Phase 4: Polish
@@ -31,10 +31,10 @@
 - [ ] Documentation
 
 ## Architecture
-- GlobeRenderer, SatelliteRenderer, PinRenderer are QSGRenderNode children
+- GlobeRenderer, SatelliteRenderer, PinRenderer, MarkerRenderer, SmokeRenderer, IntroLinesRenderer are QSGRenderNode children
 - Globe coordinates renderers via updatePaintNode (render thread)
 - Globe::updateState() handles logic on main thread (QTimer 16ms)
-- Pin labels projected to 2D via MVP, exposed as QVariantList property
+- Pin/Marker labels projected to 2D via MVP, exposed as QVariantList property
 - QML Repeater renders native Text items for crisp labels
 - Dynamic uniform buffer offsets for multi-instance drawing
 - All shaders use std140 layout for cross-platform compatibility

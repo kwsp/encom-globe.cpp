@@ -13,6 +13,7 @@ class SatelliteRenderer;
 class PinRenderer;
 class MarkerRenderer;
 class SmokeRenderer;
+class IntroLinesRenderer;
 struct SatelliteData;
 struct PinData;
 struct MarkerData;

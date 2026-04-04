@@ -4,6 +4,7 @@
 #include "PinRenderer.h"
 #include "MarkerRenderer.h"
 #include "SmokeRenderer.h"
+#include "IntroLinesRenderer.h"
 #include "Utils.h"
 #include <QFile>
 #include <QJsonDocument>
@@ -23,6 +24,8 @@ Globe::Globe(QQuickItem* parent)
     m_updateTimer = new QTimer(this);
     connect(m_updateTimer, &QTimer::timeout, this, &Globe::updateState);
     m_updateTimer->start(16);
+    
+    m_startTime = -1; // Flag to set on first update
 }
 
 Globe::~Globe() = default;
@@ -169,9 +172,13 @@ void Globe::scheduleUpdate()
 
 void Globe::updateState()
 {
+    if (m_startTime == -1) {
+        return; // Don't start logic until first render frame
+    }
+    
     // Calculate MVP here so we can project labels to 2D
     const qint64 currentTime = m_elapsed.elapsed() - m_startTime;
-    const float cameraAngle = (2.0f * M_PI * currentTime) / m_dayLength;
+    const float cameraAngle = static_cast<float>(M_PI) + (2.0f * M_PI * currentTime) / m_dayLength;
     const float dist = Utils::CAMERA_DISTANCE / static_cast<float>(m_scale);
     
     QVector3D cameraPos(dist * std::cos(cameraAngle), 
@@ -317,11 +324,22 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
         root->appendChildNode(smokeNode);
     }
     
+    // Get or create intro lines renderer (sixth child)
+    IntroLinesRenderer* introLinesNode = static_cast<IntroLinesRenderer*>(
+        root->childCount() > 5 ? root->childAtIndex(5) : nullptr);
+    if (!introLinesNode) {
+        introLinesNode = new IntroLinesRenderer();
+        root->appendChildNode(introLinesNode);
+    }
+    
     // Calculate camera and matrices
+    if (m_startTime == -1) {
+        m_startTime = m_elapsed.elapsed();
+    }
     const qint64 currentTime = m_elapsed.elapsed() - m_startTime;
     
     // Calculate camera position (orbiting)
-    const float cameraAngle = (2.0f * M_PI * currentTime) / m_dayLength;
+    const float cameraAngle = static_cast<float>(M_PI) + (2.0f * M_PI * currentTime) / m_dayLength;
     const float dist = Utils::CAMERA_DISTANCE / static_cast<float>(m_scale);
     
     QVector3D cameraPos(dist * std::cos(cameraAngle), 
@@ -409,6 +427,14 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
         smokeNode->addSource(s.lat, s.lon, s.alt);
     }
     m_newSmokeSources.clear();
+    
+    // Update intro lines renderer
+    introLinesNode->setMVP(mvp);
+    introLinesNode->setTime(static_cast<float>(currentTime));
+    introLinesNode->setDuration(static_cast<float>(m_introDuration));
+    if (m_geometryChanged) {
+        introLinesNode->setSize(QSizeF(width(), height()));
+    }
     
     // Reset geometry changed flag at the end
     if (m_geometryChanged) {
