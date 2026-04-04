@@ -11,6 +11,15 @@ project(EncomGlobe
   VERSION 0.1.0
 )
 
+# Enable testing
 enable_testing()
 
-add_subdirectory(src)
+# Find packages
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick ShaderTools QuickControls2)
+find_package(Qt6 COMPONENTS GuiPrivate)  # For RHI headers
+
+# Core library
+add_subdirectory(src/lib)
+
+# Example application
+add_subdirectory(example)

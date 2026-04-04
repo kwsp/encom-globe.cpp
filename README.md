@@ -17,25 +17,6 @@ This project demonstrates how to build complex 3D visualizations in Qt, leveragi
 - **Interactive**: Full mouse support for rotation (drag), tilt (drag), and zoom (scroll).
 - ️ **Configurable**: Exposes a rich QML API for colors, sizes, and animation durations.
 
-## Technical Highlights
-
-### 1. RHI-Based Shaders
-All shaders are written in **Vulkan-style GLSL (440)** and compiled into `.qsb` (Qt Shader Binary) files using the `qt_add_shaders` CMake macro. This allows the same shader code to run on Metal, Vulkan, and OpenGL.
-
-### 2. std140 Layout & Alignment
-The project strictly follows `std140` uniform buffer layout rules to ensure memory alignment compatibility across all graphics APIs.
-- Handled `vec3` alignment issues by adding explicit padding.
-- Used `uniformBufferWithDynamicOffset` for efficient multi-instance rendering (satellites/markers).
-
-### 3. Dynamic Uniform Buffers
-Instead of updating the same uniform buffer multiple times per frame (which causes synchronization bottlenecks), the project uses **Dynamic Offsets**:
-1. Allocate one large buffer for all instances.
-2. Upload all data in a single batch.
-3. Draw each instance using a specific memory offset.
-
-### 4. Projected 2D Labels
-To avoid blurry 3D text, labels are calculated by projecting 3D world coordinates back to 2D screen space using the MVP matrix. These coordinates are exposed to QML, allowing a standard `Repeater` to manage high-quality native Text items.
-
 ## Building and Running
 
 ### Prerequisites
@@ -60,7 +41,35 @@ cmake --build .
 ./src/EncomGlobe
 ```
 
-## Usage in QML
+## Integration in C++/CMake
+
+To use `EncomGlobeLib` in your own project, follow these steps:
+
+### 1. CMake Setup
+Add the library and its plugin to your `target_link_libraries`. You must link both the backing library and the generated QML plugin:
+
+```cmake
+target_link_libraries(MyProject PRIVATE
+    EncomGlobeLib
+    EncomGlobeLibplugin
+)
+```
+
+### 2. C++ Registration
+Because the library is static, you must manually import the QML plugin in your `main.cpp` using the `Q_IMPORT_QML_PLUGIN` macro. This ensures the linker doesn't discard the registration code.
+
+```cpp
+#include <QtQml/qqmlextensionplugin.h>
+
+// Import the static EncomGlobe QML plugin
+Q_IMPORT_QML_PLUGIN(EncomGlobePlugin)
+
+int main(int argc, char *argv[]) {
+    // ...
+}
+```
+
+### 3. Usage in QML
 
 To use the globe in your application, import the `EncomGlobe` module and add the `Globe` element. You can then interact with it using its properties and methods.
 
@@ -81,7 +90,7 @@ Globe {
 }
 ```
 
-For a complete example including a full control panel and interaction setup, please refer to [src/Main.qml](src/Main.qml).
+For a complete example including a full control panel and interaction setup, please refer to [example/Main.qml](example/Main.qml).
 
 ## QML API
 
@@ -111,6 +120,25 @@ For a complete example including a full control panel and interaction setup, ple
 | `addMarker(lat, lon, text, connected)` | Adds a node, optionally connected to the last one by an arc. |
 | `addSatellite(lat, lon, alt)` | Launches a satellite at a specific altitude multiplier (e.g. 1.2). |
 | `clearSatellites()` | Removes all active satellites. |
+
+## Technical Highlights
+
+### 1. RHI-Based Shaders
+All shaders are written in **Vulkan-style GLSL (440)** and compiled into `.qsb` (Qt Shader Binary) files using the `qt_add_shaders` CMake macro. This allows the same shader code to run on Metal, Vulkan, and OpenGL.
+
+### 2. std140 Layout & Alignment
+The project strictly follows `std140` uniform buffer layout rules to ensure memory alignment compatibility across all graphics APIs.
+- Handled `vec3` alignment issues by adding explicit padding.
+- Used `uniformBufferWithDynamicOffset` for efficient multi-instance rendering (satellites/markers).
+
+### 3. Dynamic Uniform Buffers
+Instead of updating the same uniform buffer multiple times per frame (which causes synchronization bottlenecks), the project uses **Dynamic Offsets**:
+1. Allocate one large buffer for all instances.
+2. Upload all data in a single batch.
+3. Draw each instance using a specific memory offset.
+
+### 4. Projected 2D Labels
+To avoid blurry 3D text, labels are calculated by projecting 3D world coordinates back to 2D screen space using the MVP matrix. These coordinates are exposed to QML, allowing a standard `Repeater` to manage high-quality native Text items.
 
 ## License
 MIT License - Ported with AI assistance.

@@ -35,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: artifact-linux
-          path: ${{ github.workspace }}/build-clang/src/Release/QtQuickPlayground
+          path: ${{ github.workspace }}/build-clang/example/Release/EncomGlobeExample
           if-no-files-found: warn
           overwrite: true
 
@@ -67,7 +67,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: artifact-macos
-          path: ${{ github.workspace }}/build-clang/src/Release/QtQuickPlayground.dmg
+          path: ${{ github.workspace }}/build-clang/example/Release/EncomGlobeExample.app
           compression-level: 0
           if-no-files-found: warn
           overwrite: true
@@ -105,13 +105,13 @@ jobs:
         run: cmake --build build-cl --config Release
 
       - name: Zip deployment directory
-        run: Compress-Archive -Path build-cl/src/Release/* -DestinationPath QtQuickPlayground-windows.zip
+        run: Compress-Archive -Path build-cl/example/Release/* -DestinationPath EncomGlobe-windows.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
           name: artifact-windows
-          path: ${{ github.workspace }}/QtQuickPlayground-windows.zip
+          path: ${{ github.workspace }}/EncomGlobe-windows.zip
           compression-level: 0
           if-no-files-found: warn
           overwrite: true
