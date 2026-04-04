@@ -34,6 +34,7 @@ class Globe : public QQuickItem {
     Q_PROPERTY(qreal markerSize READ markerSize WRITE setMarkerSize NOTIFY markerSizeChanged)
     Q_PROPERTY(qreal rotationOffset READ rotationOffset WRITE setRotationOffset NOTIFY rotationOffsetChanged)
     Q_PROPERTY(qreal pinHeadSize READ pinHeadSize WRITE setPinHeadSize NOTIFY pinHeadSizeChanged)
+    Q_PROPERTY(bool showLabels READ showLabels WRITE setShowLabels NOTIFY showLabelsChanged)
     Q_PROPERTY(QVariantList pinLabels READ pinLabels NOTIFY pinLabelsChanged)
 
 public:
@@ -76,6 +77,9 @@ public:
     qreal pinHeadSize() const { return m_pinHeadSize; }
     void setPinHeadSize(qreal size);
 
+    bool showLabels() const { return m_showLabels; }
+    void setShowLabels(bool show);
+
     QVariantList pinLabels() const { return m_pinLabels; }
 
     QSGNode* updatePaintNode(QSGNode* old, UpdatePaintNodeData*) override;
@@ -97,6 +101,7 @@ Q_SIGNALS:
     void markerSizeChanged();
     void rotationOffsetChanged();
     void pinHeadSizeChanged();
+    void showLabelsChanged();
     void introDurationChanged();
     void pinLabelsChanged();
 
@@ -123,6 +128,7 @@ private:
     qreal m_markerSize = 1.0;
     qreal m_rotationOffset = 0.0;
     qreal m_pinHeadSize = 0.2;
+    bool m_showLabels = false;
     qreal m_introDuration = 2000.0;
 
     // State

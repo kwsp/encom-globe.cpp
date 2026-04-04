@@ -157,6 +157,15 @@ void Globe::setPinHeadSize(qreal size)
     }
 }
 
+void Globe::setShowLabels(bool show)
+{
+    if (m_showLabels != show) {
+        m_showLabels = show;
+        emit showLabelsChanged();
+        update();
+    }
+}
+
 void Globe::setIntroDuration(qreal duration)
 {
     if (!qFuzzyCompare(m_introDuration, duration)) {

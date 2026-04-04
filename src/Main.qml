@@ -24,6 +24,7 @@ ApplicationWindow {
         introLinesColor: "#8FD8D8"
         markerSize: 0.5
         pinHeadSize: 0.2
+        showLabels: false
         introDuration: 2000
         
         // Add some test satellites after intro
@@ -88,32 +89,18 @@ ApplicationWindow {
         
         Repeater {
             model: globe.pinLabels
-            delegate: Rectangle {
+            delegate: Text {
+                visible: globe.showLabels
                 x: modelData.x - width/2
-                y: modelData.y - height - 5
-                width: lbl.width + 10
-                height: lbl.height + 4
-                color: "#aa000000"
-                radius: 3
+                y: modelData.y - height
+                text: modelData.text
+                color: "#FFFFFF"
                 opacity: modelData.opacity
-                
-                Text {
-                    id: lbl
-                    anchors.centerIn: parent
-                    text: modelData.text
-                    color: "#FFFFFF"
-                    font.family: "Inconsolata, monospace"
-                    font.pixelSize: 14
-                    font.bold: true
-                }
-                
-                // Small tail
-                Rectangle {
-                    anchors.top: parent.bottom
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    width: 1; height: 10
-                    color: "#8FD8D8"
-                }
+                font.family: "Inconsolata, monospace"
+                font.pixelSize: 16
+                font.bold: true
+                style: Text.Outline
+                styleColor: "#000000"
             }
         }
     }
@@ -260,6 +247,13 @@ ApplicationWindow {
                     var lon = Math.random() * 360 - 180
                     globe.addPin(lat, lon, "User Pin")
                 }
+            }
+            
+            CheckBox {
+                text: "Show Labels"
+                checked: globe.showLabels
+                onCheckedChanged: globe.showLabels = checked
+                palette.windowText: "#ffcc00"
             }
         }
     }
