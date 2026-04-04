@@ -23,22 +23,34 @@ void main()
     vec2 uv = vUV * 2.0 - 1.0;
     float dist = length(uv);
     
-    // Discard outside circle
     if (dist > 1.0) {
         discard;
     }
     
-    // Calculate angle for arc effects
     float angle = atan(uv.y, uv.x);
     
-    // Time in seconds (input is milliseconds)
-    float t = ubuf.time / 1000.0;
+    // Original encom logic constants
+    float numFrames = 50.0;
+    float waveStart = 6.0;
+    float numWaves = 8.0;
+    float repeatAt = 40.0;
+    float swirlDone = 23.0;
+    float arcBuffer = PI / 16.0;
+    float start = -PI + PI / 4.0;
     
-    // Initialize output
+    // Map time to 0..50 frame range
+    float frameCount = numFrames;
+    float timeInFrames = ubuf.time / 80.0; // matched to 80ms per frame from original
+    float frame = timeInFrames;
+    
+    // Original logic: swirl happens once (frames 0-40), then idle loop (40-50)
+    if (frame >= repeatAt) {
+        frame = repeatAt + mod(frame - repeatAt, numFrames - repeatAt);
+    }
     vec3 color = vec3(0.0);
     float alpha = 0.0;
     
-    // === Core: red circle ring (not filled) ===
+    // === Core: red circle ring ===
     float coreOuterRadius = 0.08;
     float coreInnerRadius = 0.04;
     float coreRing = smoothstep(coreOuterRadius + 0.01, coreOuterRadius, dist) 
@@ -46,51 +58,79 @@ void main()
     color += vec3(1.0, 0.2, 0.2) * coreRing;
     alpha = max(alpha, coreRing);
     
-    // === Rotating shield arcs (thicker white arcs) ===
+    // === Shield Arcs (Exact Encom Logic) ===
     float shieldRadius = 0.2;
-    float shieldThickness = 0.035;
-    float shieldAngle = t * 2.5;  // Rotate over time
-    float arcHalfWidth = PI / 4.5;  // 40 degree arcs
+    float shieldThickness = 0.06; // increased from 0.035 for better visibility
     
-    // 4 arcs rotating
-    for (int i = 0; i < 4; i++) {
-        float arcAngle = shieldAngle + float(i) * PI / 2.0;
-        float angleDiff = abs(mod(angle - arcAngle + PI, 2.0 * PI) - PI);
-        float arcMask = 1.0 - smoothstep(arcHalfWidth * 0.7, arcHalfWidth, angleDiff);
-        float ring = smoothstep(shieldRadius + shieldThickness, shieldRadius, dist) 
-                   * smoothstep(shieldRadius - shieldThickness, shieldRadius, dist);
-        float shield = ring * arcMask * 0.95;
-        color += vec3(1.0) * shield;
-        alpha = max(alpha, shield);
+    for (int n = 0; n < 4; n++) {
+        float arcStartAngle = 0.0;
+        float arcEndAngle = 0.0;
+        float baseOffset = float(n) * PI / 2.0 + start;
+        
+        if (frame < waveStart || frame >= numFrames) {
+            arcStartAngle = baseOffset + arcBuffer;
+            arcEndAngle = baseOffset + PI / 2.0 - arcBuffer;
+        } else if (frame < swirlDone) {
+            float total = swirlDone - waveStart;
+            float distToGo = 3.0 * PI / 2.0;
+            float step = frame - waveStart;
+            float movement = distToGo / total;
+            float movingStart = start + arcBuffer + movement * step;
+            
+            arcStartAngle = max(baseOffset, movingStart);
+            arcEndAngle = max(baseOffset + PI / 2.0 - 2.0 * arcBuffer, movingStart + PI / 2.0 - 2.0 * arcBuffer);
+        } else if (frame < repeatAt) {
+            float total = repeatAt - swirlDone;
+            float distToGo = float(n) * 2.0 * PI / 4.0;
+            float step = frame - swirlDone;
+            float movement = distToGo / total;
+            float movingStart = PI / 2.0 + PI / 4.0 + arcBuffer + movement * step;
+            
+            arcStartAngle = movingStart;
+            arcEndAngle = movingStart + PI / 2.0 - 2.0 * arcBuffer;
+        } else if (frame < (numFrames - repeatAt) / 2.0 + repeatAt) {
+            float total = (numFrames - repeatAt) / 2.0;
+            float distToGo = PI / 2.0;
+            float step = frame - repeatAt;
+            float movement = distToGo / total;
+            float movingStart = float(n) * (PI / 2.0) + PI / 4.0 + arcBuffer + movement * step;
+            
+            arcStartAngle = movingStart;
+            arcEndAngle = movingStart + PI / 2.0 - 2.0 * arcBuffer;
+        } else {
+            arcStartAngle = baseOffset + arcBuffer;
+            arcEndAngle = baseOffset + PI / 2.0 - arcBuffer;
+        }
+        
+        // Normalize angles and check if current pixel angle is within the arc
+        float diff = mod(angle - arcStartAngle, 2.0 * PI);
+        float arcLen = mod(arcEndAngle - arcStartAngle, 2.0 * PI);
+        
+        if (diff < arcLen) {
+            float ring = smoothstep(shieldRadius + shieldThickness, shieldRadius, dist) 
+                       * smoothstep(shieldRadius - shieldThickness, shieldRadius, dist);
+            color += vec3(1.0) * ring * 0.95;
+            alpha = max(alpha, ring);
+        }
     }
     
-    // === Outward pulsing waves (white arcs pointing toward globe) ===
-    int numWaves = 3;
-    float waveDuration = 1.5;  // seconds for full expansion
-    float waveInterval = 0.5;  // seconds between waves
-    float waveHalfAngle = PI / 8.0;  // 22.5 degree half-angle = 45 degree total arc
+    // === Outward pulsing waves ===
+    int numWavesCount = 3;
+    float t = ubuf.time / 1000.0;
+    float waveDuration = 1.5;
+    float waveInterval = 0.5;
+    float waveHalfAngle = PI / 8.0;
     
-    for (int i = 0; i < numWaves; i++) {
-        // Each wave starts at a different time offset
+    for (int i = 0; i < numWavesCount; i++) {
         float wavePhase = mod(t / waveDuration - float(i) * waveInterval / waveDuration, 1.0);
-        
-        // Wave radius grows from core to edge
         float waveRadius = mix(0.15, 0.95, wavePhase);
-        
-        // Fade out as wave expands
         float waveAlpha = (1.0 - wavePhase) * 0.85;
-        
-        // Wave ring thickness (thicker)
         float waveThickness = 0.02 + 0.01 * wavePhase;
         float waveRing = smoothstep(waveRadius + waveThickness, waveRadius, dist)
                         * smoothstep(waveRadius - waveThickness, waveRadius, dist);
-        
-        // Arc points toward globe using arcAngle from uniform
         float angleDiff = abs(mod(angle - ubuf.arcAngle + PI, 2.0 * PI) - PI);
         float arcMask = 1.0 - smoothstep(waveHalfAngle * 0.6, waveHalfAngle, angleDiff);
-        
         float wave = waveRing * arcMask * waveAlpha;
-        // White waves
         color += vec3(1.0, 1.0, 1.0) * wave;
         alpha = max(alpha, wave);
     }
@@ -101,6 +141,5 @@ void main()
     float fogFar = ubuf.cameraDistance + 300.0;
     float fogFactor = smoothstep(fogNear, fogFar, depth);
     
-    // Fade the alpha for fog
     fragColor = vec4(color, alpha * (1.0 - fogFactor));
 }
