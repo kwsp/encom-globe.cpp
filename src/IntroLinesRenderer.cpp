@@ -100,6 +100,7 @@ void IntroLinesRenderer::render(const RenderState* state) {
     u.rotation = rotation;
     u.currentTime = m_time;
     u.duration = m_duration;
+    u.cameraDistance = m_cameraDistance;
     rub->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &u);
 
     cb->resourceUpdate(rub);
@@ -125,7 +126,7 @@ void IntroLinesRenderer::initializeRHI(QRhi* rhi) {
 
     m_bindings = rhi->newShaderResourceBindings();
     m_bindings->setBindings({
-        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, m_uniformBuffer)
+        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage, m_uniformBuffer)
     });
     m_bindings->create();
 

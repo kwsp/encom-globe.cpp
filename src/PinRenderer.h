@@ -29,6 +29,7 @@ public:
 
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
+    void setCameraDistance(float dist) { m_cameraDistance = dist; }
     void setSize(const QSizeF& size) { m_size = size; }
     void setPins(const std::vector<PinData>& pins);
 
@@ -64,18 +65,21 @@ private:
 
     struct UniformData {
         float mvp[16];
-    };
+        float cameraDistance;
+        float padding[3];
+    }; // 80 bytes
     
     struct TopUniformData {
         float mvp[16];        // offset 0
         float color[3];       // offset 64
-        float padding;        // offset 76
+        float cameraDistance; // offset 76
     }; // Total: 80 bytes, std140 aligned
 
     std::vector<PinData> m_pins;
     std::vector<TopUniformData> m_topUniformDataCache;
     QMatrix4x4 m_mvp;
     QVector3D m_cameraPos;
+    float m_cameraDistance = 1700.0f;
     QSizeF m_size;
     int m_vertexCapacity = 0;
 };

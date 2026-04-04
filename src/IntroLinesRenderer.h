@@ -21,6 +21,7 @@ public:
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setTime(float time) { m_time = time; }
     void setDuration(float duration) { m_duration = duration; }
+    void setCameraDistance(float dist) { m_cameraDistance = dist; }
     void setSize(const QSizeF& size) { m_size = size; }
 
 private:
@@ -48,11 +49,14 @@ private:
         float rotation;
         float currentTime;
         float duration;
+        float cameraDistance;
+        float padding[3];
     };
 
     std::vector<Vertex> m_vertices;
     QMatrix4x4 m_mvp;
     float m_time = 0.0f;
     float m_duration = 2000.0f;
+    float m_cameraDistance = 1700.0f;
     QSizeF m_size;
 };

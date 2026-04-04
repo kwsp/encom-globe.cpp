@@ -33,6 +33,7 @@ public:
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setView(const QMatrix4x4& view) { m_view = view; }
     void setTime(float time) { m_time = time; }
+    void setCameraDistance(float dist) { m_cameraDistance = dist; }
     void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
     void setCameraAngle(float angle) { m_cameraAngle = angle; }
     void setSize(const QSizeF& size) { m_size = size; }
@@ -67,7 +68,7 @@ private:
         float position[3];    // offset 64, 12 bytes
         float time;           // offset 76, 4 bytes
         float size;           // offset 80, 4 bytes
-        float _pad0;          // offset 84, 4 bytes
+        float cameraDistance; // offset 84, 4 bytes
         float _pad1;          // offset 88, 4 bytes
         float _pad2;          // offset 92, 4 bytes
         float waveColor[3];   // offset 96, 12 bytes
@@ -80,6 +81,7 @@ private:
     QMatrix4x4 m_mvp;
     QMatrix4x4 m_view;
     QVector3D m_cameraPos;
+    float m_cameraDistance = 1700.0f;
     float m_cameraAngle = 0.0f;
     float m_time = 0.0f;
     QSizeF m_size;

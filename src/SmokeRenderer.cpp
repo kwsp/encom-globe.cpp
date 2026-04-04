@@ -59,6 +59,7 @@ void SmokeRenderer::render(const RenderState* state) {
     for (int i = 0; i < 16; ++i) u.mvp[i] = mData[i];
     u.color[0] = 0.8f; u.color[1] = 0.8f; u.color[2] = 0.8f; u.color[3] = 1.0f; 
     u.currentTime = m_time;
+    u.cameraDistance = m_cameraDistance;
     rub->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &u);
 
     // Update vertex buffer if needed
@@ -89,7 +90,7 @@ void SmokeRenderer::initializeRHI(QRhi* rhi) {
 
     m_bindings = rhi->newShaderResourceBindings();
     m_bindings->setBindings({
-        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, m_uniformBuffer)
+        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage, m_uniformBuffer)
     });
     m_bindings->create();
 

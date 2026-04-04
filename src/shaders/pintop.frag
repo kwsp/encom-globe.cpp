@@ -4,6 +4,12 @@ layout(location = 0) in vec2 vUV;
 layout(location = 1) in vec3 vColor;
 layout(location = 0) out vec4 fragColor;
 
+layout(std140, binding = 0) uniform buf {
+    mat4 mvp;
+    vec3 color;
+    float cameraDistance;
+} ubuf;
+
 void main() {
     vec2 uv = vUV * 2.0 - 1.0;
     float dist = length(uv);
@@ -11,10 +17,13 @@ void main() {
         discard;
     }
     
-    // Draw a filled circle with smooth edges
     float alpha = smoothstep(1.0, 0.85, dist);
     
-    // Inner slightly darker part for a "pin head" look or just solid color
-    // According to original: it's a solid circle
-    fragColor = vec4(vColor, alpha);
+    float depth = gl_FragCoord.z / gl_FragCoord.w;
+    float fogNear = ubuf.cameraDistance;
+    float fogFar = ubuf.cameraDistance + 300.0;
+    float fogFactor = smoothstep(fogNear, fogFar, depth);
+    
+    // Fade alpha for fog
+    fragColor = vec4(vColor, alpha * (1.0 - fogFactor));
 }

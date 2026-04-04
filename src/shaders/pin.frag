@@ -3,6 +3,17 @@
 layout(location = 0) in vec3 vColor;
 layout(location = 0) out vec4 fragColor;
 
+layout(std140, binding = 0) uniform buf {
+    mat4 mvp;
+    float cameraDistance;
+} ubuf;
+
 void main() {
-    fragColor = vec4(vColor, 1.0);
+    float depth = gl_FragCoord.z / gl_FragCoord.w;
+    float fogNear = ubuf.cameraDistance;
+    float fogFar = ubuf.cameraDistance + 300.0;
+    float fogFactor = smoothstep(fogNear, fogFar, depth);
+    
+    // Fade alpha for fog
+    fragColor = vec4(vColor, 1.0 - fogFactor);
 }

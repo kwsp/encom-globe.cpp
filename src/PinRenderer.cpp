@@ -84,10 +84,12 @@ void PinRenderer::render(const RenderState* state) {
     
     // Update MVP uniform for lines
     UniformData ubuf;
+    memset(&ubuf, 0, sizeof(UniformData));
     const float* mvpData = m_mvp.constData();
     for (int i = 0; i < 16; ++i) {
         ubuf.mvp[i] = mvpData[i];
     }
+    ubuf.cameraDistance = m_cameraDistance;
     rub->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &ubuf);
     
     // Update top uniforms
@@ -95,6 +97,7 @@ void PinRenderer::render(const RenderState* state) {
     for (size_t i = 0; i < m_pins.size(); ++i) {
         const auto& pin = m_pins[i];
         TopUniformData& topUbuf = m_topUniformDataCache[i];
+        memset(&topUbuf, 0, sizeof(TopUniformData));
         
         float animatedProgress = Utils::elasticOut(pin.progress);
         float currentAltitude = 1.0f + (pin.altitude - 1.0f) * animatedProgress;
@@ -127,6 +130,7 @@ void PinRenderer::render(const RenderState* state) {
         topUbuf.color[0] = pin.color.redF();
         topUbuf.color[1] = pin.color.greenF();
         topUbuf.color[2] = pin.color.blueF();
+        topUbuf.cameraDistance = m_cameraDistance;
         
         rub->updateDynamicBuffer(m_topUniformBuffer, i * UNIFORM_ALIGNMENT, 
                                  sizeof(TopUniformData), &topUbuf);
@@ -241,7 +245,7 @@ void PinRenderer::initializeRHI(QRhi* rhi) {
     // Create shader bindings
     m_shaderBindings = rhi->newShaderResourceBindings();
     m_shaderBindings->setBindings({
-        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, m_uniformBuffer)
+        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage, m_uniformBuffer)
     });
     
     if (!m_shaderBindings->create()) {

@@ -10,6 +10,7 @@ layout(std140, binding = 0) uniform buf {
     float rotation;
     float currentTime;
     float duration;
+    float cameraDistance;
 } ubuf;
 
 layout(location = 0) out vec4 vColor;
@@ -25,5 +26,5 @@ void main() {
     );
     
     gl_Position = ubuf.mvp * rotY * vec4(position, 1.0);
-    vColor = vec4(color, ubuf.opacity * 0.5);
+    vColor = vec4(color, ubuf.opacity * 0.8);
 }

@@ -5,7 +5,7 @@ layout(location = 0) in vec2 offset;
 layout(std140, binding = 0) uniform buf {
     mat4 mvp;
     vec3 color;
-    float padding;
+    float cameraDistance;
 } ubuf;
 
 layout(location = 0) out vec2 vUV;

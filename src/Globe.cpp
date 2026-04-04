@@ -425,6 +425,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     satNode->setMVP(mvp);
     satNode->setView(view);
     satNode->setTime(static_cast<float>(currentTime));
+    satNode->setCameraDistance(dist);
     satNode->setCameraPosition(cameraPos);
     satNode->setCameraAngle(cameraAngle);
     
@@ -439,6 +440,8 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     
     // Update pin renderer
     pinNode->setMVP(mvp);
+    pinNode->setCameraDistance(dist);
+    pinNode->setCameraPosition(cameraPos);
     
     if (m_geometryChanged) {
         pinNode->setSize(QSizeF(width(), height()));
@@ -454,6 +457,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     // Update marker renderer
     markerNode->setMVP(mvp);
     markerNode->setCameraPosition(cameraPos);
+    markerNode->setCameraDistance(dist);
     markerNode->setSpriteScale(static_cast<float>(m_markerSize));
     
     if (m_geometryChanged) {
@@ -468,6 +472,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     // Update smoke renderer
     smokeNode->setMVP(mvp);
     smokeNode->setTime(static_cast<float>(currentTime));
+    smokeNode->setCameraDistance(dist);
     
     for (const auto& s : m_newSmokeSources) {
         smokeNode->addSource(s.lat, s.lon, s.alt);
@@ -478,6 +483,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     introLinesNode->setMVP(mvp);
     introLinesNode->setTime(static_cast<float>(currentTime));
     introLinesNode->setDuration(static_cast<float>(m_introDuration));
+    introLinesNode->setCameraDistance(dist);
     if (m_geometryChanged) {
         introLinesNode->setSize(QSizeF(width(), height()));
     }

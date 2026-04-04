@@ -128,8 +128,10 @@ void MarkerRenderer::render(const RenderState* state) {
 
     // Update line MVP uniform
     LineUniformData lineUbuf;
+    memset(&lineUbuf, 0, sizeof(LineUniformData));
     const float* mvpData = m_mvp.constData();
     for (int i = 0; i < 16; ++i) lineUbuf.mvp[i] = mvpData[i];
+    lineUbuf.cameraDistance = m_cameraDistance;
     rub->updateDynamicBuffer(m_lineUniformBuffer, 0, sizeof(LineUniformData), &lineUbuf);
 
     // Update sprite uniforms for each marker
@@ -137,9 +139,10 @@ void MarkerRenderer::render(const RenderState* state) {
     for (size_t i = 0; i < m_markers.size(); ++i) {
         const auto& mk = m_markers[i];
         SpriteUniformData& su = m_spriteUniformCache[i];
+        memset(&su, 0, sizeof(SpriteUniformData));
 
         QVector3D pos = Utils::latLonToXYZ(mk.lat, mk.lon, Utils::GLOBE_RADIUS * mk.altitude);
-
+        
         QVector3D toCamera = (m_cameraPos - pos).normalized();
         QVector3D up(0, 1, 0);
         QVector3D right = QVector3D::crossProduct(up, toCamera).normalized();
@@ -162,7 +165,7 @@ void MarkerRenderer::render(const RenderState* state) {
         su.color[0] = mk.color.redF();
         su.color[1] = mk.color.greenF();
         su.color[2] = mk.color.blueF();
-        su.padding = 0;
+        su.cameraDistance = m_cameraDistance;
 
         rub->updateDynamicBuffer(m_spriteUniformBuffer, i * UNIFORM_ALIGNMENT,
                                  sizeof(SpriteUniformData), &su);
@@ -213,7 +216,7 @@ void MarkerRenderer::initializeRHI(QRhi* rhi) {
 
     m_lineBindings = rhi->newShaderResourceBindings();
     m_lineBindings->setBindings({
-        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage,
+        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
                                                   m_lineUniformBuffer)
     });
     m_lineBindings->create();

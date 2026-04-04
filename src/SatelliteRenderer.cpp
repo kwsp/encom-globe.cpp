@@ -115,9 +115,9 @@ void SatelliteRenderer::render(const RenderState* state) {
         // Animation
         uniformData.time = m_time;
         uniformData.size = sat.size;
+        uniformData.cameraDistance = m_cameraDistance;
         
         // Padding for std140 alignment
-        uniformData._pad0 = 0;
         uniformData._pad1 = 0;
         uniformData._pad2 = 0;
         

@@ -7,7 +7,7 @@ layout(std140, binding = 0) uniform buf {
     vec3 position;      // offset 64
     float time;         // offset 76
     float size;         // offset 80
-    float _pad0;        // offset 84
+    float cameraDistance; // offset 84
     float _pad1;        // offset 88
     float _pad2;        // offset 92
     vec3 waveColor;     // offset 96

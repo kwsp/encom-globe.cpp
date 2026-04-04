@@ -28,6 +28,7 @@ public:
 
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setTime(float time) { m_time = time; }
+    void setCameraDistance(float dist) { m_cameraDistance = dist; }
     void setSize(const QSizeF& size) { m_size = size; }
     
     void addSource(float lat, float lon, float altitude);
@@ -59,12 +60,14 @@ private:
         float mvp[16];       // 64 bytes
         float color[4];      // 16 bytes
         float currentTime;   // 4 bytes
-        float padding[3];    // 12 bytes
+        float cameraDistance;// 4 bytes
+        float padding[2];    // 8 bytes
     }; // Total: 96 bytes, 16-byte aligned
 
     std::vector<ParticleVertex> m_particles;
     int m_nextParticleIdx = 0;
     QMatrix4x4 m_mvp;
     float m_time = 0.0f;
+    float m_cameraDistance = 1700.0f;
     QSizeF m_size;
 };

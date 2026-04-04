@@ -9,7 +9,7 @@ layout(std140, binding = 0) uniform buf {
     vec3 position;      // offset 64
     float time;         // offset 76
     float size;         // offset 80
-    float _pad0;        // offset 84
+    float cameraDistance; // offset 84
     float _pad1;        // offset 88
     float _pad2;        // offset 92
     vec3 waveColor;     // offset 96
@@ -95,5 +95,12 @@ void main()
         alpha = max(alpha, wave);
     }
     
-    fragColor = vec4(color, alpha);
+    // Fog calculation
+    float depth = gl_FragCoord.z / gl_FragCoord.w;
+    float fogNear = ubuf.cameraDistance;
+    float fogFar = ubuf.cameraDistance + 300.0;
+    float fogFactor = smoothstep(fogNear, fogFar, depth);
+    
+    // Fade the alpha for fog
+    fragColor = vec4(color, alpha * (1.0 - fogFactor));
 }

@@ -101,7 +101,7 @@ void GlobeRenderer::initializeRHI(QRhi* rhi) {
     // Create shader bindings
     m_shaderBindings = rhi->newShaderResourceBindings();
     m_shaderBindings->setBindings({
-        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage, m_uniformBuffer)
+        QRhiShaderResourceBinding::uniformBuffer(0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage, m_uniformBuffer)
     });
     
     if (!m_shaderBindings->create()) {
