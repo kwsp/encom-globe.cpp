@@ -22,6 +22,7 @@ jobs:
           host: linux
           target: desktop
           arch: linux_gcc_64
+          modules: 'qtshadertools'
           cache: true
 
       - name: CMake configure
@@ -53,6 +54,7 @@ jobs:
           host: mac
           target: desktop
           arch: clang_64
+          modules: 'qtshadertools'
           cache: true
 
       - name: CMake configure
@@ -85,6 +87,7 @@ jobs:
           host: windows
           target: desktop
           arch: win64_msvc2022_64
+          modules: 'qtshadertools'
           cache: true
 
       - name: Setup MSVC environment
