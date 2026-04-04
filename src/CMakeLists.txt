@@ -8,6 +8,7 @@ qt_add_executable(${PROJECT_NAME}
   Globe.h Globe.cpp
   GlobeRenderer.h GlobeRenderer.cpp
   SatelliteRenderer.h SatelliteRenderer.cpp
+  PinRenderer.h PinRenderer.cpp
 )
 
 qt_add_qml_module(${PROJECT_NAME}
@@ -31,6 +32,8 @@ qt_add_shaders(${PROJECT_NAME} "shaders"
     shaders/globe.frag
     shaders/satellite.vert
     shaders/satellite.frag
+    shaders/pin.vert
+    shaders/pin.frag
 )
 
 configure_file(config.h.in config.h)

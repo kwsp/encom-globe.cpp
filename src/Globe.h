@@ -9,7 +9,9 @@
 
 class GlobeRenderer;
 class SatelliteRenderer;
+class PinRenderer;
 struct SatelliteData;
+struct PinData;
 
 class Globe : public QQuickItem {
     Q_OBJECT
@@ -80,6 +82,10 @@ private:
     // Satellites
     std::vector<SatelliteData> m_satellites;
     bool m_satellitesChanged = false;
+    
+    // Pins
+    std::vector<PinData> m_pins;
+    bool m_pinsChanged = false;
     
     // Timing
     QElapsedTimer m_elapsed;

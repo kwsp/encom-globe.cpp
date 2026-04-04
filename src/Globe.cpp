@@ -1,6 +1,7 @@
 #include "Globe.h"
 #include "GlobeRenderer.h"
 #include "SatelliteRenderer.h"
+#include "PinRenderer.h"
 #include "Utils.h"
 #include <QFile>
 #include <QJsonDocument>
@@ -94,8 +95,17 @@ void Globe::setIntroDuration(qreal duration)
 
 void Globe::addPin(qreal lat, qreal lon, const QString& label)
 {
-    Q_UNUSED(lat) Q_UNUSED(lon) Q_UNUSED(label)
-    // TODO: Implement pin adding via renderer
+    PinData pin;
+    pin.lat = static_cast<float>(lat);
+    pin.lon = static_cast<float>(lon);
+    pin.altitude = 1.1f; // Target altitude (10% above surface)
+    pin.text = label;
+    pin.progress = 0.0f; // Start animation at 0
+    pin.color = QColor("#8FD8D8");
+    
+    m_pins.push_back(pin);
+    m_pinsChanged = true;
+    update();
 }
 
 void Globe::addMarker(qreal lat, qreal lon, const QString& label, bool connected)
@@ -160,6 +170,14 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
         root->appendChildNode(satNode);
     }
     
+    // Get or create pin renderer (third child)
+    PinRenderer* pinNode = static_cast<PinRenderer*>(
+        root->childCount() > 2 ? root->childAtIndex(2) : nullptr);
+    if (!pinNode) {
+        pinNode = new PinRenderer();
+        root->appendChildNode(pinNode);
+    }
+    
     // Calculate camera and matrices
     const qint64 currentTime = m_elapsed.elapsed() - m_startTime;
     
@@ -218,8 +236,35 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
         m_satellitesChanged = false;
     }
     
+    // Update pin renderer
+    pinNode->setMVP(mvp);
+    
+    if (m_geometryChanged) {
+        pinNode->setSize(QSizeF(width(), height()));
+    }
+    
+    // Animate pin progress
+    bool pinsAnimating = false;
+    for (auto& pin : m_pins) {
+        if (pin.progress < 1.0f) {
+            // Elastic out animation or simple lerp
+            pin.progress += 0.016f; // rough 60fps step
+            if (pin.progress > 1.0f) pin.progress = 1.0f;
+            pinsAnimating = true;
+            m_pinsChanged = true;
+        }
+    }
+    
+    if (m_pinsChanged) {
+        pinNode->setPins(m_pins);
+        m_pinsChanged = false;
+    }
+    
     // Schedule next frame for animation
-    update();
+    if (pinsAnimating) {
+        update();
+    }
+    update(); // Since globe rotates anyway, keep updating
     
     return root;
 }

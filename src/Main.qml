@@ -31,6 +31,11 @@ ApplicationWindow {
                 // globe.addSatellite(35.6762, 139.6503, 1.15) // Tokyo
                 globe.addSatellite(-33.8688, 151.2093, 1.25) // Sydney
                 // globe.addSatellite(55.7558, 37.6173, 1.2)   // Moscow
+                
+                // Add pins
+                globe.addPin(48.8566, 2.3522, "Paris")
+                globe.addPin(34.0522, -118.2437, "LA")
+                globe.addPin(-23.5505, -46.6333, "Sao Paulo")
             }
         }
         
