@@ -140,6 +140,11 @@ void SatelliteRenderer::render(const RenderState* state) {
         // After uv*2-1: -1 at top, +1 at bottom
         // So shader +Y = down = -up in world space
         uniformData.arcAngle = atan2(-localY, localX);
+        
+        // Core color (satellite color from QML)
+        uniformData.coreColor[0] = sat.coreColor.redF();
+        uniformData.coreColor[1] = sat.coreColor.greenF();
+        uniformData.coreColor[2] = sat.coreColor.blueF();
     }
     
     // Upload ALL uniform data in ONE batch before drawing

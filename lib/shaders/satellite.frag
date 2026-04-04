@@ -10,9 +10,12 @@ layout(std140, binding = 0) uniform buf {
     vec3 position;      // offset 64
     float time;         // offset 76
     float size;         // offset 80
-    vec3 viewDir;       // offset 84
-    vec3 waveColor;     // offset 96
-    float arcAngle;     // offset 108
+    float _pad1[3];     // offset 84  (align viewDir to 96)
+    vec3 viewDir;       // offset 96
+    float _pad2;        // offset 108 (align waveColor to 112)
+    vec3 waveColor;     // offset 112
+    float arcAngle;     // offset 124
+    vec3 coreColor;     // offset 128
 } ubuf;
 
 #define PI 3.14159265359
@@ -52,7 +55,7 @@ void main()
     float coreInnerRadius = 0.04;
     float coreRing = smoothstep(coreOuterRadius + 0.01, coreOuterRadius, dist) 
                    * smoothstep(coreInnerRadius - 0.01, coreInnerRadius, dist);
-    color += vec3(1.0, 0.2, 0.2) * coreRing;
+    color += ubuf.coreColor * coreRing;
     alpha = max(alpha, coreRing);
     
     // === Shield Arcs (Exact Encom Logic) ===

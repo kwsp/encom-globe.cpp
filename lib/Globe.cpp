@@ -117,6 +117,9 @@ void Globe::setSatelliteColor(const QString& color)
 {
     if (m_satelliteColor != color) {
         m_satelliteColor = color;
+        for (auto& sat : m_satellites)
+            sat.coreColor = QColor(color);
+        m_satellitesChanged = true;
         emit satelliteColorChanged();
         update();
     }

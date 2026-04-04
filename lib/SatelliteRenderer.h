@@ -63,15 +63,20 @@ private:
     };
     
     // Uniform data per satellite (std140 aligned)
+    // vec3 requires 16-byte alignment in std140!
     struct UniformData {
-        float mvp[16];        // offset 0, 64 bytes
-        float position[3];    // offset 64, 12 bytes
-        float time;           // offset 76, 4 bytes
-        float size;           // offset 80, 4 bytes
-        float viewDir[3];     // offset 84, 12 bytes
-        float waveColor[3];   // offset 96, 12 bytes
-        float arcAngle;       // offset 108, 4 bytes
-    };                        // Total: 112 bytes, 16-byte aligned
+        float mvp[16];        // offset 0,   64 bytes
+        float position[3];    // offset 64,  12 bytes
+        float time;           // offset 76,  4 bytes
+        float size;           // offset 80,  4 bytes
+        float _pad1[3];       // offset 84,  12 bytes (align viewDir to 96)
+        float viewDir[3];     // offset 96,  12 bytes
+        float _pad2;          // offset 108, 4 bytes (align waveColor to 112)
+        float waveColor[3];   // offset 112, 12 bytes
+        float arcAngle;       // offset 124, 4 bytes
+        float coreColor[3];   // offset 128, 12 bytes
+        float _pad3;          // offset 140, 4 bytes
+    };                        // Total: 144 bytes
 
     // Data
     std::vector<SatelliteData> m_satellites;
