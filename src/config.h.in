@@ -1,0 +1,2 @@
+#pragma once
+#define APP_MODULE_NAME "@PROJECT_NAME@"

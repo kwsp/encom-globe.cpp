@@ -1,0 +1,125 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "build-${presetName}"
+    },
+    {
+      "name": "win64-cl-base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe",
+        "CMAKE_C_FLAGS": "/MP /EHsc /arch:AVX2 /DNOMINMAX",
+        "CMAKE_CXX_FLAGS": "/MP /EHsc /arch:AVX2 /DNOMINMAX"
+      }
+    },
+    {
+      "name": "win64-clang-cl-base",
+      "hidden": true,
+      "inherits": "win64-cl-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-cl.exe",
+        "CMAKE_CXX_COMPILER": "clang-cl.exe"
+      }
+    },
+    {
+      "name": "win64",
+      "displayName": "Visual Studio 2022",
+      "description": "Visual Studio 2022 + x64 CL",
+      "inherits": "win64-cl-base",
+      "generator": "Visual Studio 17 2022"
+    },
+    {
+      "name": "gcc",
+      "inherits": "base",
+      "displayName": "GCC",
+      "description": "Ninja Multi-Config + GCC",
+      "generator": "Ninja Multi-Config",
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "clang",
+      "inherits": "base",
+      "displayName": "Clang",
+      "description": "Ninja Multi-Config + Clang",
+      "generator": "Ninja Multi-Config",
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "clang-vec-report",
+      "inherits": "clang",
+      "displayName": "Clang with vec report",
+      "description": "Ninja Multi-Config + Clang with autovectorizer report",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize"
+      }
+    },
+    {
+      "name": "clang-asan",
+      "inherits": "clang",
+      "displayName": "Clang with ASAN",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "-fsanitize=address -fno-omit-frame-pointer",
+        "CMAKE_CXX_FLAGS": "-fsanitize=address -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address"
+      }
+    },
+    {
+      "name": "cl",
+      "inherits": "win64-cl-base",
+      "displayName": "CL",
+      "description": "Ninja Multi-Config + x64 MSVC",
+      "generator": "Ninja Multi-Config"
+    },
+    {
+      "name": "cl-vec-report",
+      "inherits": "cl",
+      "displayName": "CL (with vec report)",
+      "description": "Ninja Multi-Config + x64 MSVC (with autovectorizer report)",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "/MP /EHsc /arch:AVX2 /DNOMINMAX /Qvec-report:2"
+      }
+    },
+    {
+      "name": "clang-cl",
+      "inherits": "win64-clang-cl-base",
+      "displayName": "ClangCL",
+      "description": "Ninja Multi-Config + x64 Clang CL",
+      "generator": "Ninja Multi-Config"
+    }
+  ]
+}
