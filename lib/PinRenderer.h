@@ -30,7 +30,6 @@ public:
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
     void setViewDir(const QVector3D& dir) { m_viewDir = dir; }
-    void setCameraDistance(float dist) { m_cameraDistance = dist; }
     void setHeadScale(float scale) { m_headScale = scale; }
     void setViewportRect(const QRect& rect) { m_viewportRect = rect; }
     void setSize(const QSizeF& size) { m_size = size; }
@@ -85,7 +84,6 @@ private:
     QMatrix4x4 m_mvp;
     QVector3D m_cameraPos;
     QVector3D m_viewDir;
-    float m_cameraDistance = 1700.0f;
     float m_headScale = 1.0f;
     QRect m_viewportRect;
     QSizeF m_size;

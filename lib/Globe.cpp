@@ -473,13 +473,10 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     
     // Update satellite renderer
     satNode->setMVP(mvp);
-    satNode->setView(view);
     satNode->setViewDir(cameraPos.normalized());
     satNode->setViewportRect(pixelRect);
     satNode->setTime(static_cast<float>(currentTime));
-    satNode->setCameraDistance(dist);
     satNode->setCameraPosition(cameraPos);
-    satNode->setCameraAngle(cameraAngle);
     
     if (m_geometryChanged) {
         satNode->setSize(QSizeF(width(), height()));
@@ -493,7 +490,6 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     // Update pin renderer
     pinNode->setMVP(mvp);
     pinNode->setViewDir(cameraPos.normalized());
-    pinNode->setCameraDistance(dist);
     pinNode->setCameraPosition(cameraPos);
     pinNode->setHeadScale(static_cast<float>(m_pinHeadSize));
     pinNode->setViewportRect(pixelRect);
@@ -513,7 +509,6 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     markerNode->setMVP(mvp);
     markerNode->setCameraPosition(cameraPos);
     markerNode->setViewDir(cameraPos.normalized());
-    markerNode->setCameraDistance(dist);
     markerNode->setSpriteScale(static_cast<float>(m_markerSize));
     markerNode->setViewportRect(pixelRect);
     
@@ -530,7 +525,6 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     smokeNode->setMVP(mvp);
     smokeNode->setViewDir(cameraPos.normalized());
     smokeNode->setTime(static_cast<float>(currentTime));
-    smokeNode->setCameraDistance(dist);
     smokeNode->setViewportRect(pixelRect);
     
     for (const auto& s : m_newSmokeSources) {
@@ -543,7 +537,6 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     introLinesNode->setViewDir(cameraPos.normalized());
     introLinesNode->setTime(static_cast<float>(currentTime));
     introLinesNode->setDuration(static_cast<float>(m_introDuration));
-    introLinesNode->setCameraDistance(dist);
     introLinesNode->setViewportRect(pixelRect);
     if (m_geometryChanged) {
         introLinesNode->setSize(QSizeF(width(), height()));
