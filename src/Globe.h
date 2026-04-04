@@ -12,6 +12,7 @@ class GlobeRenderer;
 class SatelliteRenderer;
 class PinRenderer;
 class MarkerRenderer;
+class SmokeRenderer;
 struct SatelliteData;
 struct PinData;
 struct MarkerData;
@@ -98,6 +99,12 @@ private:
     // Markers
     std::vector<MarkerData> m_markers;
     bool m_markersChanged = false;
+    
+    // Smoke
+    struct NewSmokeSource {
+        float lat, lon, alt;
+    };
+    std::vector<NewSmokeSource> m_newSmokeSources;
     
     // Timing
     QElapsedTimer m_elapsed;

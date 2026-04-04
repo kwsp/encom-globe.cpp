@@ -10,6 +10,7 @@ qt_add_executable(${PROJECT_NAME}
   SatelliteRenderer.h SatelliteRenderer.cpp
   PinRenderer.h PinRenderer.cpp
   MarkerRenderer.h MarkerRenderer.cpp
+  SmokeRenderer.h SmokeRenderer.cpp
 )
 
 qt_add_qml_module(${PROJECT_NAME}
@@ -37,6 +38,8 @@ qt_add_shaders(${PROJECT_NAME} "shaders"
     shaders/pin.frag
     shaders/pintop.vert
     shaders/pintop.frag
+    shaders/smoke.vert
+    shaders/smoke.frag
 )
 
 configure_file(config.h.in config.h)

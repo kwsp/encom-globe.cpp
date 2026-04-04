@@ -3,6 +3,7 @@
 #include "SatelliteRenderer.h"
 #include "PinRenderer.h"
 #include "MarkerRenderer.h"
+#include "SmokeRenderer.h"
 #include "Utils.h"
 #include <QFile>
 #include <QJsonDocument>
@@ -111,6 +112,7 @@ void Globe::addPin(qreal lat, qreal lon, const QString& label)
     
     m_pins.push_back(pin);
     m_pinsChanged = true;
+    m_newSmokeSources.push_back({(float)lat, (float)lon, 1.1f});
     update();
 }
 
@@ -133,6 +135,7 @@ void Globe::addMarker(qreal lat, qreal lon, const QString& label, bool connected
     
     m_markers.push_back(mk);
     m_markersChanged = true;
+    m_newSmokeSources.push_back({(float)lat, (float)lon, 1.2f});
     update();
 }
 
@@ -306,6 +309,14 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
         root->appendChildNode(markerNode);
     }
     
+    // Get or create smoke renderer (fifth child)
+    SmokeRenderer* smokeNode = static_cast<SmokeRenderer*>(
+        root->childCount() > 4 ? root->childAtIndex(4) : nullptr);
+    if (!smokeNode) {
+        smokeNode = new SmokeRenderer();
+        root->appendChildNode(smokeNode);
+    }
+    
     // Calculate camera and matrices
     const qint64 currentTime = m_elapsed.elapsed() - m_startTime;
     
@@ -389,6 +400,15 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
         markerNode->setMarkers(m_markers);
         m_markersChanged = false;
     }
+    
+    // Update smoke renderer
+    smokeNode->setMVP(mvp);
+    smokeNode->setTime(static_cast<float>(currentTime));
+    
+    for (const auto& s : m_newSmokeSources) {
+        smokeNode->addSource(s.lat, s.lon, s.alt);
+    }
+    m_newSmokeSources.clear();
     
     // Reset geometry changed flag at the end
     if (m_geometryChanged) {
