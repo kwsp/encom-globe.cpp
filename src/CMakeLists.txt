@@ -34,6 +34,8 @@ qt_add_shaders(${PROJECT_NAME} "shaders"
     shaders/satellite.frag
     shaders/pin.vert
     shaders/pin.frag
+    shaders/pintop.vert
+    shaders/pintop.frag
 )
 
 configure_file(config.h.in config.h)

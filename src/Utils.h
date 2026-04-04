@@ -60,4 +60,11 @@ inline QColor randomColorVariation(const QColor& base, float variance = 0.2f) {
     return result;
 }
 
+inline float elasticOut(float t) {
+    if (t <= 0.0f) return 0.0f;
+    if (t >= 1.0f) return 1.0f;
+    float p = 0.3f;
+    return std::pow(2.0f, -10.0f * t) * std::sin((t - p / 4.0f) * (2.0f * static_cast<float>(M_PI)) / p) + 1.0f;
+}
+
 } // namespace Utils

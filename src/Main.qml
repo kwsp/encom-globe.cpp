@@ -68,6 +68,22 @@ ApplicationWindow {
                     globe.scale + wheel.angleDelta.y * 0.001))
             }
         }
+        
+        Repeater {
+            model: globe.pinLabels
+            delegate: Text {
+                x: modelData.x - width/2
+                y: modelData.y - height
+                text: modelData.text
+                color: "#FFFFFF"
+                opacity: modelData.opacity
+                font.family: "Inconsolata, monospace"
+                font.pixelSize: 16
+                font.bold: true
+                style: Text.Outline
+                styleColor: "#000000"
+            }
+        }
     }
     
     // Info overlay

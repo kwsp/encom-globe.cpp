@@ -28,6 +28,7 @@ public:
     QRectF rect() const override { return {0, 0, m_size.width(), m_size.height()}; }
 
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
+    void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
     void setSize(const QSizeF& size) { m_size = size; }
     void setPins(const std::vector<PinData>& pins);
 
@@ -40,22 +41,41 @@ private:
     QRhiBuffer* m_vertexBuffer = nullptr;
     QRhiBuffer* m_uniformBuffer = nullptr;
     QRhiShaderResourceBindings* m_shaderBindings = nullptr;
+    
+    // Top sprite resources
+    QRhiGraphicsPipeline* m_topPipeline = nullptr;
+    QRhiBuffer* m_topVertexBuffer = nullptr;
+    QRhiBuffer* m_topUniformBuffer = nullptr;
+    QRhiShaderResourceBindings* m_topShaderBindings = nullptr;
 
     bool m_initialized = false;
     bool m_needsPipelineRebuild = false;
     bool m_geometryDirty = false;
+    bool m_topVertexDataUploaded = false;
 
     struct Vertex {
         float position[3];
         float color[3];
     };
+    
+    struct TopVertex {
+        float offset[2];
+    };
 
     struct UniformData {
         float mvp[16];
     };
+    
+    struct TopUniformData {
+        float mvp[16];        // offset 0
+        float color[3];       // offset 64
+        float padding;        // offset 76
+    }; // Total: 80 bytes, std140 aligned
 
     std::vector<PinData> m_pins;
+    std::vector<TopUniformData> m_topUniformDataCache;
     QMatrix4x4 m_mvp;
+    QVector3D m_cameraPos;
     QSizeF m_size;
     int m_vertexCapacity = 0;
 };

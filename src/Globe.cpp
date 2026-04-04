@@ -16,6 +16,11 @@ Globe::Globe(QQuickItem* parent)
     // Start animation timer
     m_elapsed.start();
     m_startTime = m_elapsed.elapsed();
+    
+    // Logic timer for QML property updates
+    m_updateTimer = new QTimer(this);
+    connect(m_updateTimer, &QTimer::timeout, this, &Globe::updateState);
+    m_updateTimer->start(16);
 }
 
 Globe::~Globe() = default;
@@ -142,6 +147,73 @@ void Globe::scheduleUpdate()
     update();
 }
 
+void Globe::updateState()
+{
+    // Calculate MVP here so we can project labels to 2D
+    const qint64 currentTime = m_elapsed.elapsed() - m_startTime;
+    const float cameraAngle = (2.0f * M_PI * currentTime) / m_dayLength;
+    const float dist = Utils::CAMERA_DISTANCE / static_cast<float>(m_scale);
+    
+    QVector3D cameraPos(dist * std::cos(cameraAngle), 
+                         m_viewAngle * dist, 
+                         dist * std::sin(cameraAngle));
+    
+    QMatrix4x4 view;
+    view.lookAt(cameraPos, QVector3D(0, 0, 0), QVector3D(0, 1, 0));
+    
+    QMatrix4x4 projection;
+    const float aspect = width() > 0 && height() > 0 ? static_cast<float>(width() / height()) : 1.0f;
+    projection.perspective(50.0f, aspect, 1.0f, dist + 500);
+    
+    QMatrix4x4 viewProj = projection * view;
+    
+    QVariantList newLabels;
+    
+    // Animate pin progress and create label data
+    bool pinsAnimating = false;
+    for (auto& pin : m_pins) {
+        if (pin.progress < 1.0f) {
+            pin.progress += 0.016f; // rough 60fps step
+            if (pin.progress > 1.0f) pin.progress = 1.0f;
+            pinsAnimating = true;
+            m_pinsChanged = true;
+        }
+        
+        if (!pin.text.isEmpty() && pin.progress > 0.3f) { // delay label slightly
+            float animatedProgress = Utils::elasticOut(pin.progress);
+            // Label floats slightly above the pin top
+            float currentAltitude = 1.0f + (pin.altitude - 1.0f) * animatedProgress + 0.05f;
+            QVector3D pos = Utils::latLonToXYZ(pin.lat, pin.lon, Utils::GLOBE_RADIUS * currentAltitude);
+            
+            QVector4D clipPos = viewProj * QVector4D(pos, 1.0f);
+            if (clipPos.w() > 0.0f) {
+                float ndcX = clipPos.x() / clipPos.w();
+                float ndcY = clipPos.y() / clipPos.w();
+                // Check if front-facing
+                QVector3D surfacePos = Utils::latLonToXYZ(pin.lat, pin.lon, Utils::GLOBE_RADIUS);
+                if (QVector3D::dotProduct(surfacePos.normalized(), cameraPos.normalized()) > -0.2f) {
+                    float x = (ndcX + 1.0f) * 0.5f * width();
+                    float y = (1.0f - ndcY) * 0.5f * height();
+                    
+                    QVariantMap map;
+                    map["x"] = x;
+                    map["y"] = y;
+                    map["text"] = pin.text;
+                    map["opacity"] = (pin.progress - 0.3f) / 0.7f;
+                    newLabels.append(map);
+                }
+            }
+        }
+    }
+    
+    if (newLabels != m_pinLabels) {
+        m_pinLabels = newLabels;
+        emit pinLabelsChanged();
+    }
+    
+    update(); // schedule render
+}
+
 QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
 {
     // We use a simple structure:
@@ -243,17 +315,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
         pinNode->setSize(QSizeF(width(), height()));
     }
     
-    // Animate pin progress
-    bool pinsAnimating = false;
-    for (auto& pin : m_pins) {
-        if (pin.progress < 1.0f) {
-            // Elastic out animation or simple lerp
-            pin.progress += 0.016f; // rough 60fps step
-            if (pin.progress > 1.0f) pin.progress = 1.0f;
-            pinsAnimating = true;
-            m_pinsChanged = true;
-        }
-    }
+    // Animate pin progress is now handled in updateState()
     
     if (m_pinsChanged) {
         pinNode->setPins(m_pins);
@@ -261,9 +323,6 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     }
     
     // Schedule next frame for animation
-    if (pinsAnimating) {
-        update();
-    }
     update(); // Since globe rotates anyway, keep updating
     
     return root;
