@@ -14,18 +14,18 @@ ApplicationWindow {
         id: globe
         anchors.fill: parent
         
-        dayLength: 28000  // 28 seconds per rotation
-        scale: 1.0
-        viewAngle: 0.1
+        dayLength: 28000  // ms per rotation
+        scale: 1.0        // zoom factor
+        viewAngle: 0.1    // tilt in radians
         baseColor: "#ffcc00"
         pinColor: "#00eeee"
         markerColor: "#ffcc00"
         satelliteColor: "#ff0000"
         introLinesColor: "#8FD8D8"
-        markerSize: 0.5
-        pinHeadSize: 0.2
+        markerSize: 0.5   // marker scale multiplier
+        pinHeadSize: 0.2  // pin head scale multiplier
         showLabels: false
-        introDuration: 2000
+        introDuration: 2000 // ms
         
         // Add some test satellites after intro
         Timer {

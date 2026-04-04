@@ -51,7 +51,7 @@ cmake ..
 cmake --build .
 ```
 
-### Running
+### Running the sample
 ```bash
 # macOS
 ./src/EncomGlobe.app/Contents/MacOS/EncomGlobe
@@ -60,23 +60,57 @@ cmake --build .
 ./src/EncomGlobe
 ```
 
+## Usage in QML
+
+To use the globe in your application, import the `EncomGlobe` module and add the `Globe` element. You can then interact with it using its properties and methods.
+
+```qml
+import EncomGlobe
+
+Globe {
+    id: myGlobe
+    anchors.fill: parent
+    
+    baseColor: "#ffcc00"
+    showLabels: true
+    
+    Component.onCompleted: {
+        addPin(40.7128, -74.0060, "New York")
+        addMarker(34.0522, -118.2437, "Los Angeles", true)
+    }
+}
+```
+
+For a complete example including a full control panel and interaction setup, please refer to [src/Main.qml](src/Main.qml).
+
 ## QML API
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `baseColor` | `string` | The primary color of the globe tiles. |
-| `pinColor` | `string` | Color of Pins and their heads. |
-| `markerColor` | `string` | Color of Markers and Arc Lines. |
-| `satelliteColor`| `string` | Core color of orbiting satellites. |
-| `introDuration` | `real` | Duration of the intro animation in ms. |
-| `markerSize` | `real` | Scale factor for marker sprites. |
-| `rotationOffset`| `real` | Manual rotation adjustment (for dragging). |
+### Properties
+
+| Property | Type | Unit / Range | Description |
+|----------|------|--------------|-------------|
+| `dayLength` | `real` | ms | Rotation speed (ms per full 360° turn). |
+| `scale` | `real` | multiplier | Zoom factor (typical range: 0.3 - 3.0). |
+| `viewAngle` | `real` | radians | Vertical camera tilt/angle. |
+| `rotationOffset`| `real` | radians | Manual horizontal rotation adjustment. |
+| `baseColor` | `string` | hex string | The primary color of the globe tiles. |
+| `pinColor` | `string` | hex string | Color of Pins and their heads. |
+| `markerColor` | `string` | hex string | Color of Markers and Arc Lines. |
+| `satelliteColor`| `string` | hex string | Core color of orbiting satellites. |
+| `introLinesColor`| `string` | hex string | Color of the initial sweeping intro lines. |
+| `introDuration` | `real` | ms | Duration of the intro animation. |
+| `markerSize` | `real` | multiplier | Scale factor for marker sprites. |
+| `pinHeadSize` | `real` | multiplier | Scale factor for the circular heads of pins. |
+| `showLabels` | `bool` | flag | Whether to display the 2D text labels. |
+
+### Methods
 
 | Method | Description |
 |--------|-------------|
-| `addPin(lat, lon, text)` | Adds a vertical pin at the location. |
-| `addMarker(lat, lon, text, connected)` | Adds a node, optionally connected to the last one. |
-| `addSatellite(lat, lon, alt)` | Launches a satellite at a specific altitude. |
+| `addPin(lat, lon, text)` | Adds a vertical pin at the specified lat/lon (degrees). |
+| `addMarker(lat, lon, text, connected)` | Adds a node, optionally connected to the last one by an arc. |
+| `addSatellite(lat, lon, alt)` | Launches a satellite at a specific altitude multiplier (e.g. 1.2). |
+| `clearSatellites()` | Removes all active satellites. |
 
 ## License
 MIT License - Ported with AI assistance.

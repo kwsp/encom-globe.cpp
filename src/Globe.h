@@ -22,18 +22,18 @@ class Globe : public QQuickItem {
     Q_OBJECT
     QML_ELEMENT
 
-    Q_PROPERTY(qreal dayLength READ dayLength WRITE setDayLength NOTIFY dayLengthChanged)
-    Q_PROPERTY(qreal scale READ scale WRITE setScale NOTIFY scaleChanged)
-    Q_PROPERTY(qreal viewAngle READ viewAngle WRITE setViewAngle NOTIFY viewAngleChanged)
+    Q_PROPERTY(qreal dayLength READ dayLength WRITE setDayLength NOTIFY dayLengthChanged) // rotation speed in ms per full turn
+    Q_PROPERTY(qreal scale READ scale WRITE setScale NOTIFY scaleChanged) // zoom factor (typically 0.3 to 3.0)
+    Q_PROPERTY(qreal viewAngle READ viewAngle WRITE setViewAngle NOTIFY viewAngleChanged) // vertical tilt in radians
     Q_PROPERTY(QString baseColor READ baseColor WRITE setBaseColor NOTIFY baseColorChanged)
     Q_PROPERTY(QString pinColor READ pinColor WRITE setPinColor NOTIFY pinColorChanged)
     Q_PROPERTY(QString markerColor READ markerColor WRITE setMarkerColor NOTIFY markerColorChanged)
     Q_PROPERTY(QString satelliteColor READ satelliteColor WRITE setSatelliteColor NOTIFY satelliteColorChanged)
     Q_PROPERTY(QString introLinesColor READ introLinesColor WRITE setIntroLinesColor NOTIFY introLinesColorChanged)
-    Q_PROPERTY(qreal introDuration READ introDuration WRITE setIntroDuration NOTIFY introDurationChanged)
-    Q_PROPERTY(qreal markerSize READ markerSize WRITE setMarkerSize NOTIFY markerSizeChanged)
-    Q_PROPERTY(qreal rotationOffset READ rotationOffset WRITE setRotationOffset NOTIFY rotationOffsetChanged)
-    Q_PROPERTY(qreal pinHeadSize READ pinHeadSize WRITE setPinHeadSize NOTIFY pinHeadSizeChanged)
+    Q_PROPERTY(qreal introDuration READ introDuration WRITE setIntroDuration NOTIFY introDurationChanged) // animation duration in ms
+    Q_PROPERTY(qreal markerSize READ markerSize WRITE setMarkerSize NOTIFY markerSizeChanged) // scale multiplier for marker sprites
+    Q_PROPERTY(qreal rotationOffset READ rotationOffset WRITE setRotationOffset NOTIFY rotationOffsetChanged) // horizontal rotation offset in radians
+    Q_PROPERTY(qreal pinHeadSize READ pinHeadSize WRITE setPinHeadSize NOTIFY pinHeadSizeChanged) // scale multiplier for pin heads
     Q_PROPERTY(bool showLabels READ showLabels WRITE setShowLabels NOTIFY showLabelsChanged)
     Q_PROPERTY(QVariantList pinLabels READ pinLabels NOTIFY pinLabelsChanged)
 
@@ -86,7 +86,7 @@ public:
 
     Q_INVOKABLE void addPin(qreal lat, qreal lon, const QString& label = QString());
     Q_INVOKABLE void addMarker(qreal lat, qreal lon, const QString& label, bool connected = false);
-    Q_INVOKABLE void addSatellite(qreal lat, qreal lon, qreal altitude);
+    Q_INVOKABLE void addSatellite(qreal lat, qreal lon, qreal altitude); // altitude as multiplier (e.g. 1.2)
     Q_INVOKABLE void clearSatellites();
 
 Q_SIGNALS:
