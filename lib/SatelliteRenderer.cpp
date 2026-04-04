@@ -88,9 +88,10 @@ void SatelliteRenderer::render(const RenderState* state) {
         }
         up = QVector3D::crossProduct(toCamera, right).normalized();
         
-        // Scale based on distance
+        // Scale based on distance, with intro growth animation
         float distToCam = (m_cameraPos - pos).length();
-        float scale = 150.0f * sat.size * (distToCam / Utils::CAMERA_DISTANCE);
+        float introScale = sat.progress * sat.progress; // quadratic ease-in
+        float scale = 150.0f * sat.size * introScale * (distToCam / Utils::CAMERA_DISTANCE);
         
         // Build model matrix
         QMatrix4x4 model;

@@ -269,6 +269,15 @@ void Globe::updateState()
     
     QVariantList newLabels;
     
+    // Animate satellite intro growth (0→1 over ~500ms = ~30 frames at 16ms)
+    for (auto& sat : m_satellites) {
+        if (sat.progress < 1.0f) {
+            sat.progress += 0.033f; // ~500ms to reach 1.0
+            if (sat.progress > 1.0f) sat.progress = 1.0f;
+            m_satellitesChanged = true;
+        }
+    }
+    
     // Animate pin progress and create label data
     for (auto& pin : m_pins) {
         if (pin.progress < 1.0f) {

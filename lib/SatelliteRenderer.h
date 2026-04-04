@@ -14,6 +14,7 @@ struct SatelliteData {
     QColor coreColor = "#FF0000";
     QColor shieldColor = "#FFFFFF";
     float size = 1.0f;
+    float progress = 0.0f; // 0→1 intro growth animation
 };
 
 class SatelliteRenderer : public QSGRenderNode {
