@@ -32,6 +32,7 @@ class Globe : public QQuickItem {
     Q_PROPERTY(QString introLinesColor READ introLinesColor WRITE setIntroLinesColor NOTIFY introLinesColorChanged)
     Q_PROPERTY(qreal introDuration READ introDuration WRITE setIntroDuration NOTIFY introDurationChanged)
     Q_PROPERTY(qreal markerSize READ markerSize WRITE setMarkerSize NOTIFY markerSizeChanged)
+    Q_PROPERTY(qreal rotationOffset READ rotationOffset WRITE setRotationOffset NOTIFY rotationOffsetChanged)
     Q_PROPERTY(QVariantList pinLabels READ pinLabels NOTIFY pinLabelsChanged)
 
 public:
@@ -68,6 +69,9 @@ public:
     qreal markerSize() const { return m_markerSize; }
     void setMarkerSize(qreal size);
 
+    qreal rotationOffset() const { return m_rotationOffset; }
+    void setRotationOffset(qreal offset);
+
     QVariantList pinLabels() const { return m_pinLabels; }
 
     QSGNode* updatePaintNode(QSGNode* old, UpdatePaintNodeData*) override;
@@ -87,6 +91,7 @@ Q_SIGNALS:
     void satelliteColorChanged();
     void introLinesColorChanged();
     void markerSizeChanged();
+    void rotationOffsetChanged();
     void introDurationChanged();
     void pinLabelsChanged();
 
@@ -111,6 +116,7 @@ private:
     QString m_satelliteColor = "#ff0000";
     QString m_introLinesColor = "#8FD8D8";
     qreal m_markerSize = 1.0;
+    qreal m_rotationOffset = 0.0;
     qreal m_introDuration = 2000.0;
 
     // State

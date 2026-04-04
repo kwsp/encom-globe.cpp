@@ -59,7 +59,7 @@ void IntroLinesRenderer::generateLines() {
 }
 
 void IntroLinesRenderer::render(const RenderState* state) {
-    if (m_time > m_duration) return; 
+    if (m_time > m_duration + 500.0f) return; 
     
     QRhiRenderTarget* rt = renderTarget();
     QRhiCommandBuffer* cb = commandBuffer();

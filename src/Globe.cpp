@@ -139,6 +139,15 @@ void Globe::setMarkerSize(qreal size)
     }
 }
 
+void Globe::setRotationOffset(qreal offset)
+{
+    if (!qFuzzyCompare(m_rotationOffset, offset)) {
+        m_rotationOffset = offset;
+        emit rotationOffsetChanged();
+        update();
+    }
+}
+
 void Globe::setIntroDuration(qreal duration)
 {
     if (!qFuzzyCompare(m_introDuration, duration)) {
@@ -223,7 +232,7 @@ void Globe::updateState()
     
     // Calculate MVP here so we can project labels to 2D
     const qint64 currentTime = m_elapsed.elapsed() - m_startTime;
-    const float cameraAngle = static_cast<float>(M_PI) + (2.0f * M_PI * currentTime) / m_dayLength;
+    const float cameraAngle = static_cast<float>(m_rotationOffset) + static_cast<float>(M_PI) + (2.0f * M_PI * currentTime) / m_dayLength;
     const float dist = Utils::CAMERA_DISTANCE / static_cast<float>(m_scale);
     
     QVector3D cameraPos(dist * std::cos(cameraAngle), 
@@ -384,7 +393,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     const qint64 currentTime = m_elapsed.elapsed() - m_startTime;
     
     // Calculate camera position (orbiting)
-    const float cameraAngle = static_cast<float>(M_PI) + (2.0f * M_PI * currentTime) / m_dayLength;
+    const float cameraAngle = static_cast<float>(m_rotationOffset) + static_cast<float>(M_PI) + (2.0f * M_PI * currentTime) / m_dayLength;
     const float dist = Utils::CAMERA_DISTANCE / static_cast<float>(m_scale);
     
     QVector3D cameraPos(dist * std::cos(cameraAngle), 

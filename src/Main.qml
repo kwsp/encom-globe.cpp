@@ -64,9 +64,15 @@ ApplicationWindow {
             
             onPositionChanged: (mouse) => {
                 if (pressed) {
+                    // Adjust rotation offset based on horizontal drag
+                    let dx = mouse.x - lastX
+                    globe.rotationOffset += dx * 0.005
+                    
                     // Adjust view angle based on vertical drag
+                    let dy = mouse.y - lastY
                     globe.viewAngle = Math.max(-1.57, Math.min(1.57, 
-                        globe.viewAngle + (mouse.y - lastY) * 0.005))
+                        globe.viewAngle + dy * 0.005))
+                    
                     lastX = mouse.x
                     lastY = mouse.y
                 }
