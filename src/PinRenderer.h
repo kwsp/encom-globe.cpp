@@ -30,6 +30,7 @@ public:
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
     void setCameraDistance(float dist) { m_cameraDistance = dist; }
+    void setHeadScale(float scale) { m_headScale = scale; }
     void setSize(const QSizeF& size) { m_size = size; }
     void setPins(const std::vector<PinData>& pins);
 
@@ -80,6 +81,7 @@ private:
     QMatrix4x4 m_mvp;
     QVector3D m_cameraPos;
     float m_cameraDistance = 1700.0f;
+    float m_headScale = 1.0f;
     QSizeF m_size;
     int m_vertexCapacity = 0;
 };

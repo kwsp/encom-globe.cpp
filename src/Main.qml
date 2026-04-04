@@ -23,6 +23,7 @@ ApplicationWindow {
         satelliteColor: "#ff0000"
         introLinesColor: "#8FD8D8"
         markerSize: 0.5
+        pinHeadSize: 0.2
         introDuration: 2000
         
         // Add some test satellites after intro
@@ -87,17 +88,32 @@ ApplicationWindow {
         
         Repeater {
             model: globe.pinLabels
-            delegate: Text {
+            delegate: Rectangle {
                 x: modelData.x - width/2
-                y: modelData.y - height
-                text: modelData.text
-                color: "#FFFFFF"
+                y: modelData.y - height - 5
+                width: lbl.width + 10
+                height: lbl.height + 4
+                color: "#aa000000"
+                radius: 3
                 opacity: modelData.opacity
-                font.family: "Inconsolata, monospace"
-                font.pixelSize: 16
-                font.bold: true
-                style: Text.Outline
-                styleColor: "#000000"
+                
+                Text {
+                    id: lbl
+                    anchors.centerIn: parent
+                    text: modelData.text
+                    color: "#FFFFFF"
+                    font.family: "Inconsolata, monospace"
+                    font.pixelSize: 14
+                    font.bold: true
+                }
+                
+                // Small tail
+                Rectangle {
+                    anchors.top: parent.bottom
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: 1; height: 10
+                    color: "#8FD8D8"
+                }
             }
         }
     }
@@ -175,6 +191,75 @@ ApplicationWindow {
                 to: 120000
                 value: globe.dayLength
                 onValueChanged: globe.dayLength = value
+            }
+            
+            Label {
+                text: "Pin Head Size: " + globe.pinHeadSize.toFixed(2)
+                font.family: "Inconsolata, monospace"
+                font.pixelSize: 12
+                color: "#8FD8D8"
+            }
+            
+            Slider {
+                width: parent.width
+                from: 0.1
+                to: 3.0
+                value: globe.pinHeadSize
+                onValueChanged: globe.pinHeadSize = value
+            }
+
+            Label {
+                text: "Marker Size: " + globe.markerSize.toFixed(2)
+                font.family: "Inconsolata, monospace"
+                font.pixelSize: 12
+                color: "#8FD8D8"
+            }
+            
+            Slider {
+                width: parent.width
+                from: 0.1
+                to: 2.0
+                value: globe.markerSize
+                onValueChanged: globe.markerSize = value
+            }
+            
+            Label {
+                text: "Theme"
+                font.family: "Inconsolata, monospace"
+                font.pixelSize: 14
+                color: "#ffcc00"
+            }
+            
+            Row {
+                spacing: 5
+                property var colors: ["#ffcc00", "#00eeee", "#ff4444", "#44ff44", "#ffffff"]
+                Repeater {
+                    model: parent.colors
+                    delegate: Rectangle {
+                        width: 30; height: 30
+                        color: modelData
+                        border.color: globe.baseColor === modelData ? "white" : "transparent"
+                        border.width: 2
+                        radius: 3
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                globe.baseColor = modelData
+                                globe.markerColor = modelData
+                            }
+                        }
+                    }
+                }
+            }
+
+            Button {
+                text: "Drop random pin"
+                width: parent.width
+                onClicked: {
+                    var lat = Math.random() * 180 - 90
+                    var lon = Math.random() * 360 - 180
+                    globe.addPin(lat, lon, "User Pin")
+                }
             }
         }
     }

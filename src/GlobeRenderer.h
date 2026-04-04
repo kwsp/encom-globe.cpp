@@ -28,7 +28,7 @@ public:
     void setCurrentTime(float time) { m_currentTime = time; }
     void setIntroDuration(float duration) { m_introDuration = duration; }
     void setIntroAltitude(float altitude) { m_introAltitude = altitude; }
-    void setBaseColor(const QString& color) { m_baseColor = color; }
+    void setBaseColor(const QString& color);
     void setTileData(const QJsonObject& data);
     void setSize(const QSizeF& size) { m_size = size; }
 
@@ -66,6 +66,7 @@ private:
     float m_introDuration = 2000.0f;
     float m_introAltitude = 1.10f;
     QString m_baseColor = "#ffcc00";
+    QJsonObject m_tileData;
     
     // Size
     QSizeF m_size;

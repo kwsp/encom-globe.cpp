@@ -148,6 +148,15 @@ void Globe::setRotationOffset(qreal offset)
     }
 }
 
+void Globe::setPinHeadSize(qreal size)
+{
+    if (!qFuzzyCompare(m_pinHeadSize, size)) {
+        m_pinHeadSize = size;
+        emit pinHeadSizeChanged();
+        update();
+    }
+}
+
 void Globe::setIntroDuration(qreal duration)
 {
     if (!qFuzzyCompare(m_introDuration, duration)) {
@@ -451,6 +460,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     pinNode->setMVP(mvp);
     pinNode->setCameraDistance(dist);
     pinNode->setCameraPosition(cameraPos);
+    pinNode->setHeadScale(static_cast<float>(m_pinHeadSize));
     
     if (m_geometryChanged) {
         pinNode->setSize(QSizeF(width(), height()));

@@ -112,7 +112,7 @@ void PinRenderer::render(const RenderState* state) {
         up = QVector3D::crossProduct(toCamera, right).normalized();
         
         float distToCam = (m_cameraPos - pos).length();
-        float scale = 30.0f * (distToCam / Utils::CAMERA_DISTANCE); // increased from 15 to 30
+        float scale = 30.0f * m_headScale * (distToCam / Utils::CAMERA_DISTANCE); // increased from 15 to 30
         
         QMatrix4x4 model;
         model.setColumn(0, QVector4D(right * scale, 0));

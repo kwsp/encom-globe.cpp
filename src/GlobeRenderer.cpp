@@ -235,7 +235,17 @@ void GlobeRenderer::updateUniformBuffer(QRhiResourceUpdateBatch* batch) {
     batch->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &uniformData);
 }
 
+void GlobeRenderer::setBaseColor(const QString& color) {
+    if (m_baseColor != color) {
+        m_baseColor = color;
+        if (!m_tileData.isEmpty()) {
+            setTileData(m_tileData);
+        }
+    }
+}
+
 void GlobeRenderer::setTileData(const QJsonObject& data) {
+    m_tileData = data;
     m_vertices.clear();
     
     QJsonArray tiles = data["tiles"].toArray();
