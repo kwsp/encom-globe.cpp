@@ -1,4 +1,4 @@
-set(LIB_NAME EncomGlobeLib)
+set(LIB_NAME EncomGlobe)
 
 qt_add_library(${LIB_NAME} STATIC)
 

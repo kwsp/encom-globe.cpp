@@ -19,7 +19,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick ShaderTools QuickControl
 find_package(Qt6 COMPONENTS GuiPrivate)  # For RHI headers
 
 # Core library
-add_subdirectory(src/lib)
+add_subdirectory(lib)
 
 # Example application
 add_subdirectory(example)
