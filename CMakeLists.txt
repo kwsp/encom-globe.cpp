@@ -6,7 +6,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
 
-project(QtQuickPlayground 
+project(EncomGlobe 
   LANGUAGES C CXX
   VERSION 0.1.0
 )

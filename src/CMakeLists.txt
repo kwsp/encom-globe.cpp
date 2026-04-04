@@ -1,20 +1,37 @@
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick ShaderTools QuickControls2)
+find_package(Qt6 COMPONENTS GuiPrivate)  # For RHI headers
 qt_standard_project_setup(REQUIRES 6.5)
 
 qt_add_executable(${PROJECT_NAME}
   main.cpp
+  Utils.h Utils.cpp
+  Globe.h Globe.cpp
+  GlobeRenderer.h GlobeRenderer.cpp
+  SatelliteRenderer.h SatelliteRenderer.cpp
 )
+
 qt_add_qml_module(${PROJECT_NAME}
   URI ${PROJECT_NAME}
   VERSION ${CMAKE_PROJECT_VERSION}
   QML_FILES
     Main.qml
+  RESOURCES
+    grid.json
 )
 
-# This is only needed to debug QML in Qt Creator.
-# target_compile_definitions(${PROJECT_NAME} PRIVATE
-#   "$<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:QT_QML_DEBUG>"
-# )
+qt_add_shaders(${PROJECT_NAME} "shaders"
+  PRECOMPILE
+  PREFIX "/shaders"
+  GLSL "440"
+  SPIRV "100"
+  HLSL 50
+  MSL 12
+  FILES
+    shaders/globe.vert
+    shaders/globe.frag
+    shaders/satellite.vert
+    shaders/satellite.frag
+)
 
 configure_file(config.h.in config.h)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
@@ -22,8 +39,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(${PROJECT_NAME} PRIVATE
   Qt6::Core
   Qt6::Gui
+  Qt6::GuiPrivate  # For RHI headers
   Qt6::Qml
   Qt6::Quick
+  Qt6::ShaderTools
+  Qt6::QuickControls2
 )
 
 # Generate .qmlls.ini
@@ -44,11 +64,8 @@ endif()
 
 # App Bundle
 if (WIN32)
-  # https://doc.qt.io/qt-6/windows-deployment.html
   set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
   find_program(WINDEPLOYQT NAMES windeployqt6 windeployqt HINTS "${Qt6_DIR}/../../../bin" REQUIRED)
-
-  # Add post build command to call windeployqt
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
       COMMAND ${WINDEPLOYQT}
       "$<IF:$<CONFIG:Debug>,--debug,--release>"
@@ -58,8 +75,6 @@ if (WIN32)
   )
 
 elseif(APPLE)
-  # https://doc.qt.io/qt-6/macos-deployment.html
-  # Derive Qt's lib directory from Qt6_DIR (e.g. /opt/homebrew/lib/cmake/Qt6 -> /opt/homebrew/lib)
   cmake_path(GET Qt6_DIR PARENT_PATH _qt_cmake_dir)
   cmake_path(GET _qt_cmake_dir PARENT_PATH _qt_lib_dir)
 
@@ -69,7 +84,6 @@ elseif(APPLE)
     BUILD_RPATH "${_qt_lib_dir}"
   )
 
-  # Find macdeployqt and Qt paths for deployment
   get_target_property(QT_BIN_DIR Qt::qmake IMPORTED_LOCATION)
   find_program(MACDEPLOYQT NAMES macdeployqt HINTS "${QT_BIN_DIR}")
 
@@ -81,8 +95,6 @@ elseif(APPLE)
     )
   endif()
 
-  # Release: run macdeployqt to bundle Qt libraries into the .app and create a .dmg
-  # Non-Release: write a qt.conf pointing to the system Qt so the app finds plugins/QML
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND}
           -DMACDEPLOYQT:FILEPATH=${MACDEPLOYQT}
