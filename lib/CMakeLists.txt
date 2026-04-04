@@ -20,7 +20,6 @@ target_sources(${LIB_NAME} PRIVATE
 qt_add_qml_module(${LIB_NAME}
     URI EncomGlobe
     VERSION 1.0
-    OUTPUT_DIRECTORY EncomGlobe
     RESOURCE_PREFIX "/qt/qml"
     RESOURCES
         grid.json
