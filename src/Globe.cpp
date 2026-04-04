@@ -2,6 +2,7 @@
 #include "GlobeRenderer.h"
 #include "SatelliteRenderer.h"
 #include "PinRenderer.h"
+#include "MarkerRenderer.h"
 #include "Utils.h"
 #include <QFile>
 #include <QJsonDocument>
@@ -115,8 +116,24 @@ void Globe::addPin(qreal lat, qreal lon, const QString& label)
 
 void Globe::addMarker(qreal lat, qreal lon, const QString& label, bool connected)
 {
-    Q_UNUSED(lat) Q_UNUSED(lon) Q_UNUSED(label) Q_UNUSED(connected)
-    // TODO: Implement marker adding via renderer
+    MarkerData mk;
+    mk.lat = static_cast<float>(lat);
+    mk.lon = static_cast<float>(lon);
+    mk.altitude = 1.2f;
+    mk.text = label;
+    mk.color = QColor("#FFCC00");
+    mk.lineProgress = 0.0f;
+    mk.markerProgress = 0.0f;
+    
+    if (connected && !m_markers.empty()) {
+        mk.previousIndex = static_cast<int>(m_markers.size()) - 1;
+    } else {
+        mk.previousIndex = -1;
+    }
+    
+    m_markers.push_back(mk);
+    m_markersChanged = true;
+    update();
 }
 
 void Globe::addSatellite(qreal lat, qreal lon, qreal altitude)
@@ -170,18 +187,15 @@ void Globe::updateState()
     QVariantList newLabels;
     
     // Animate pin progress and create label data
-    bool pinsAnimating = false;
     for (auto& pin : m_pins) {
         if (pin.progress < 1.0f) {
-            pin.progress += 0.016f; // rough 60fps step
+            pin.progress += 0.016f;
             if (pin.progress > 1.0f) pin.progress = 1.0f;
-            pinsAnimating = true;
             m_pinsChanged = true;
         }
         
-        if (!pin.text.isEmpty() && pin.progress > 0.3f) { // delay label slightly
+        if (!pin.text.isEmpty() && pin.progress > 0.3f) {
             float animatedProgress = Utils::elasticOut(pin.progress);
-            // Label floats slightly above the pin top
             float currentAltitude = 1.0f + (pin.altitude - 1.0f) * animatedProgress + 0.05f;
             QVector3D pos = Utils::latLonToXYZ(pin.lat, pin.lon, Utils::GLOBE_RADIUS * currentAltitude);
             
@@ -189,20 +203,54 @@ void Globe::updateState()
             if (clipPos.w() > 0.0f) {
                 float ndcX = clipPos.x() / clipPos.w();
                 float ndcY = clipPos.y() / clipPos.w();
-                // Check if front-facing
                 QVector3D surfacePos = Utils::latLonToXYZ(pin.lat, pin.lon, Utils::GLOBE_RADIUS);
                 if (QVector3D::dotProduct(surfacePos.normalized(), cameraPos.normalized()) > -0.2f) {
-                    float x = (ndcX + 1.0f) * 0.5f * width();
-                    float y = (1.0f - ndcY) * 0.5f * height();
-                    
                     QVariantMap map;
-                    map["x"] = x;
-                    map["y"] = y;
+                    map["x"] = (ndcX + 1.0f) * 0.5f * width();
+                    map["y"] = (1.0f - ndcY) * 0.5f * height();
                     map["text"] = pin.text;
                     map["opacity"] = (pin.progress - 0.3f) / 0.7f;
                     newLabels.append(map);
                 }
             }
+        }
+    }
+    
+    // Animate markers and add labels
+    for (auto& mk : m_markers) {
+        bool changed = false;
+        if (mk.lineProgress < 1.0f) {
+            mk.lineProgress += 0.008f;
+            if (mk.lineProgress > 1.0f) mk.lineProgress = 1.0f;
+            changed = true;
+        }
+        float markerDelay = (mk.previousIndex >= 0) ? 0.8f : 0.0f;
+        if (mk.lineProgress > markerDelay && mk.markerProgress < 1.0f) {
+            mk.markerProgress += 0.02f;
+            if (mk.markerProgress > 1.0f) mk.markerProgress = 1.0f;
+            changed = true;
+        }
+        
+        if (!mk.text.isEmpty() && mk.markerProgress > 0.1f) {
+            QVector3D pos = Utils::latLonToXYZ(mk.lat, mk.lon, Utils::GLOBE_RADIUS * mk.altitude + 30.0f);
+            QVector4D clipPos = viewProj * QVector4D(pos, 1.0f);
+            if (clipPos.w() > 0.0f) {
+                float ndcX = clipPos.x() / clipPos.w();
+                float ndcY = clipPos.y() / clipPos.w();
+                QVector3D surfacePos = Utils::latLonToXYZ(mk.lat, mk.lon, Utils::GLOBE_RADIUS);
+                if (QVector3D::dotProduct(surfacePos.normalized(), cameraPos.normalized()) > -0.2f) {
+                    QVariantMap map;
+                    map["x"] = (ndcX + 1.0f) * 0.5f * width();
+                    map["y"] = (1.0f - ndcY) * 0.5f * height();
+                    map["text"] = mk.text;
+                    map["opacity"] = mk.markerProgress;
+                    newLabels.append(map);
+                }
+            }
+        }
+        
+        if (changed) {
+            m_markersChanged = true;
         }
     }
     
@@ -250,6 +298,14 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
         root->appendChildNode(pinNode);
     }
     
+    // Get or create marker renderer (fourth child)
+    MarkerRenderer* markerNode = static_cast<MarkerRenderer*>(
+        root->childCount() > 3 ? root->childAtIndex(3) : nullptr);
+    if (!markerNode) {
+        markerNode = new MarkerRenderer();
+        root->appendChildNode(markerNode);
+    }
+    
     // Calculate camera and matrices
     const qint64 currentTime = m_elapsed.elapsed() - m_startTime;
     
@@ -289,7 +345,6 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     
     if (m_geometryChanged) {
         globeNode->setSize(QSizeF(width(), height()));
-        m_geometryChanged = false;
     }
     
     // Update satellite renderer
@@ -320,6 +375,24 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     if (m_pinsChanged) {
         pinNode->setPins(m_pins);
         m_pinsChanged = false;
+    }
+    
+    // Update marker renderer
+    markerNode->setMVP(mvp);
+    markerNode->setCameraPosition(cameraPos);
+    
+    if (m_geometryChanged) {
+        markerNode->setSize(QSizeF(width(), height()));
+    }
+    
+    if (m_markersChanged) {
+        markerNode->setMarkers(m_markers);
+        m_markersChanged = false;
+    }
+    
+    // Reset geometry changed flag at the end
+    if (m_geometryChanged) {
+        m_geometryChanged = false;
     }
     
     // Schedule next frame for animation

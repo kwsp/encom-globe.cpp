@@ -34,8 +34,13 @@ ApplicationWindow {
                 
                 // Add pins
                 globe.addPin(48.8566, 2.3522, "Paris")
-                globe.addPin(34.0522, -118.2437, "LA")
                 globe.addPin(-23.5505, -46.6333, "Sao Paulo")
+                
+                // Add markers
+                globe.addMarker(40.7128, -74.0060, "NYC", false)
+                globe.addMarker(34.0522, -118.2437, "LA", true)
+                globe.addMarker(35.6762, 139.6503, "Tokyo", true)
+                globe.addMarker(-33.8688, 151.2093, "Sydney", true)
             }
         }
         

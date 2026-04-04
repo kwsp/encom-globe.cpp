@@ -9,6 +9,7 @@ qt_add_executable(${PROJECT_NAME}
   GlobeRenderer.h GlobeRenderer.cpp
   SatelliteRenderer.h SatelliteRenderer.cpp
   PinRenderer.h PinRenderer.cpp
+  MarkerRenderer.h MarkerRenderer.cpp
 )
 
 qt_add_qml_module(${PROJECT_NAME}

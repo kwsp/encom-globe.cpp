@@ -2,7 +2,6 @@
 #include "Utils.h"
 #include <QFile>
 #include <QDebug>
-#include <QDebug>
 
 static const int MAX_SATELLITES = 64;
 static const int UNIFORM_ALIGNMENT = 256;  // Typical GPU alignment for dynamic uniforms

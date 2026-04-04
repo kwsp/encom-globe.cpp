@@ -11,8 +11,10 @@
 class GlobeRenderer;
 class SatelliteRenderer;
 class PinRenderer;
+class MarkerRenderer;
 struct SatelliteData;
 struct PinData;
+struct MarkerData;
 
 class Globe : public QQuickItem {
     Q_OBJECT
@@ -92,6 +94,10 @@ private:
     std::vector<PinData> m_pins;
     bool m_pinsChanged = false;
     QVariantList m_pinLabels;
+    
+    // Markers
+    std::vector<MarkerData> m_markers;
+    bool m_markersChanged = false;
     
     // Timing
     QElapsedTimer m_elapsed;
