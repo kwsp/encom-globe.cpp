@@ -6,16 +6,18 @@ layout(location = 1) in float vRelativeDepth;
 layout(location = 0) out vec4 fragColor;
 
 layout(std140, binding = 0) uniform buf {
-    mat4 mvp;           // offset 0
-    vec3 position;      // offset 64
-    float time;         // offset 76
-    float size;         // offset 80
-    float _pad1[3];     // offset 84  (align viewDir to 96)
-    vec3 viewDir;       // offset 96
-    float _pad2;        // offset 108 (align waveColor to 112)
-    vec3 waveColor;     // offset 112
-    float arcAngle;     // offset 124
-    vec3 coreColor;     // offset 128
+    mat4 mvp;           // offset 0,   64 bytes
+    vec3 position;      // offset 64,  12 bytes
+    float time;         // offset 76,  4 bytes
+    float size;         // offset 80,  4 bytes
+    float _p1;          // offset 84,  4 bytes
+    float _p2;          // offset 88,  4 bytes
+    float _p3;          // offset 92,  4 bytes
+    vec3 viewDir;       // offset 96,  12 bytes
+    float _p4;          // offset 108, 4 bytes
+    vec3 waveColor;     // offset 112, 12 bytes
+    float arcAngle;     // offset 124, 4 bytes
+    vec3 coreColor;     // offset 128, 12 bytes
 } ubuf;
 
 #define PI 3.14159265359
