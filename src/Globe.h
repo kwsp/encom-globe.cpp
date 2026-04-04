@@ -26,6 +26,10 @@ class Globe : public QQuickItem {
     Q_PROPERTY(qreal scale READ scale WRITE setScale NOTIFY scaleChanged)
     Q_PROPERTY(qreal viewAngle READ viewAngle WRITE setViewAngle NOTIFY viewAngleChanged)
     Q_PROPERTY(QString baseColor READ baseColor WRITE setBaseColor NOTIFY baseColorChanged)
+    Q_PROPERTY(QString pinColor READ pinColor WRITE setPinColor NOTIFY pinColorChanged)
+    Q_PROPERTY(QString markerColor READ markerColor WRITE setMarkerColor NOTIFY markerColorChanged)
+    Q_PROPERTY(QString satelliteColor READ satelliteColor WRITE setSatelliteColor NOTIFY satelliteColorChanged)
+    Q_PROPERTY(QString introLinesColor READ introLinesColor WRITE setIntroLinesColor NOTIFY introLinesColorChanged)
     Q_PROPERTY(qreal introDuration READ introDuration WRITE setIntroDuration NOTIFY introDurationChanged)
     Q_PROPERTY(QVariantList pinLabels READ pinLabels NOTIFY pinLabelsChanged)
 
@@ -48,6 +52,18 @@ public:
     qreal introDuration() const { return m_introDuration; }
     void setIntroDuration(qreal duration);
 
+    QString pinColor() const { return m_pinColor; }
+    void setPinColor(const QString& color);
+
+    QString markerColor() const { return m_markerColor; }
+    void setMarkerColor(const QString& color);
+
+    QString satelliteColor() const { return m_satelliteColor; }
+    void setSatelliteColor(const QString& color);
+
+    QString introLinesColor() const { return m_introLinesColor; }
+    void setIntroLinesColor(const QString& color);
+
     QVariantList pinLabels() const { return m_pinLabels; }
 
     QSGNode* updatePaintNode(QSGNode* old, UpdatePaintNodeData*) override;
@@ -62,6 +78,10 @@ Q_SIGNALS:
     void scaleChanged();
     void viewAngleChanged();
     void baseColorChanged();
+    void pinColorChanged();
+    void markerColorChanged();
+    void satelliteColorChanged();
+    void introLinesColorChanged();
     void introDurationChanged();
     void pinLabelsChanged();
 
@@ -81,6 +101,10 @@ private:
     qreal m_scale = 1.0;
     qreal m_viewAngle = 0.0;
     QString m_baseColor = "#ffcc00";
+    QString m_pinColor = "#00eeee";
+    QString m_markerColor = "#ffcc00";
+    QString m_satelliteColor = "#ff0000";
+    QString m_introLinesColor = "#8FD8D8";
     qreal m_introDuration = 2000.0;
 
     // State

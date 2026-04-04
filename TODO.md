@@ -20,9 +20,9 @@
 
 ## Phase 3: Markers & Effects ✅
 - [x] Marker with arc line drawing (connected nodes)
-- [x] Smoke particle system (animated gray particles ascending from pins)
-- [x] Intro lines animation (sweeping lines synced with the globe)
-- [ ] Color customization API (Q_PROPERTY)
+- [x] Smoke particle system (GPU-animated particles)
+- [x] Intro lines animation (sweeping lines synced with globe)
+- [x] Color customization API (Q_PROPERTY)
 
 ## Phase 4: Polish
 - [ ] Performance optimization (instancing)
@@ -30,11 +30,20 @@
 - [ ] Cross-platform testing
 - [ ] Documentation
 
+## Color API
+All colors configurable from QML:
+- `baseColor` - Globe tile base color (default: "#ffcc00")
+- `pinColor` - Pin line and top color (default: "#00eeee")
+- `markerColor` - Marker sprite and arc line color (default: "#ffcc00")
+- `satelliteColor` - Satellite core color (default: "#ff0000")
+- `introLinesColor` - Intro lines color (default: "#8FD8D8")
+
 ## Architecture
-- GlobeRenderer, SatelliteRenderer, PinRenderer, MarkerRenderer, SmokeRenderer, IntroLinesRenderer are QSGRenderNode children
+- 6 QSGRenderNode children: Globe, Satellite, Pin, Marker, Smoke, IntroLines
 - Globe coordinates renderers via updatePaintNode (render thread)
 - Globe::updateState() handles logic on main thread (QTimer 16ms)
 - Pin/Marker labels projected to 2D via MVP, exposed as QVariantList property
 - QML Repeater renders native Text items for crisp labels
 - Dynamic uniform buffer offsets for multi-instance drawing
 - All shaders use std140 layout for cross-platform compatibility
+- Camera starts at angle PI to match original encom-globe

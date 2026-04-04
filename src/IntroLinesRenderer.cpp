@@ -116,7 +116,6 @@ void IntroLinesRenderer::render(const RenderState* state) {
 
 void IntroLinesRenderer::initializeRHI(QRhi* rhi) {
     generateLines();
-    qDebug() << "IntroLinesRenderer::initializeRHI - vertex count:" << m_vertices.size();
     m_vertexBuffer = rhi->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer, 
                                      m_vertices.size() * sizeof(Vertex));
     m_vertexBuffer->create();

@@ -18,6 +18,10 @@ ApplicationWindow {
         scale: 1.0
         viewAngle: 0.1
         baseColor: "#ffcc00"
+        pinColor: "#00eeee"
+        markerColor: "#ffcc00"
+        satelliteColor: "#ff0000"
+        introLinesColor: "#8FD8D8"
         introDuration: 2000
         
         // Add some test satellites after intro

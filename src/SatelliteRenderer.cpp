@@ -140,18 +140,6 @@ void SatelliteRenderer::render(const RenderState* state) {
         // After uv*2-1: -1 at top, +1 at bottom
         // So shader +Y = down = -up in world space
         uniformData.arcAngle = atan2(-localY, localX);
-        
-        // Debug first frame
-        static bool debugOnce = true;
-        if (debugOnce && i == 0) {
-            qDebug() << "Satellite 0:";
-            qDebug() << "  pos:" << pos;
-            qDebug() << "  right:" << right << "up:" << up;
-            qDebug() << "  toGlobe:" << toGlobe;
-            qDebug() << "  localX:" << localX << "localY:" << localY;
-            qDebug() << "  arcAngle:" << uniformData.arcAngle << "(" << (uniformData.arcAngle * 180.0 / M_PI) << "deg)";
-            debugOnce = false;
-        }
     }
     
     // Upload ALL uniform data in ONE batch before drawing

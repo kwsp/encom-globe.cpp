@@ -94,6 +94,42 @@ void Globe::setBaseColor(const QString& color)
     }
 }
 
+void Globe::setPinColor(const QString& color)
+{
+    if (m_pinColor != color) {
+        m_pinColor = color;
+        emit pinColorChanged();
+        update();
+    }
+}
+
+void Globe::setMarkerColor(const QString& color)
+{
+    if (m_markerColor != color) {
+        m_markerColor = color;
+        emit markerColorChanged();
+        update();
+    }
+}
+
+void Globe::setSatelliteColor(const QString& color)
+{
+    if (m_satelliteColor != color) {
+        m_satelliteColor = color;
+        emit satelliteColorChanged();
+        update();
+    }
+}
+
+void Globe::setIntroLinesColor(const QString& color)
+{
+    if (m_introLinesColor != color) {
+        m_introLinesColor = color;
+        emit introLinesColorChanged();
+        update();
+    }
+}
+
 void Globe::setIntroDuration(qreal duration)
 {
     if (!qFuzzyCompare(m_introDuration, duration)) {
@@ -111,7 +147,7 @@ void Globe::addPin(qreal lat, qreal lon, const QString& label)
     pin.altitude = 1.1f; // Target altitude (10% above surface)
     pin.text = label;
     pin.progress = 0.0f; // Start animation at 0
-    pin.color = QColor("#8FD8D8");
+    pin.color = QColor(m_pinColor);
     
     m_pins.push_back(pin);
     m_pinsChanged = true;
@@ -126,7 +162,7 @@ void Globe::addMarker(qreal lat, qreal lon, const QString& label, bool connected
     mk.lon = static_cast<float>(lon);
     mk.altitude = 1.2f;
     mk.text = label;
-    mk.color = QColor("#FFCC00");
+    mk.color = QColor(m_markerColor);
     mk.lineProgress = 0.0f;
     mk.markerProgress = 0.0f;
     
@@ -149,7 +185,7 @@ void Globe::addSatellite(qreal lat, qreal lon, qreal altitude)
     sat.lon = static_cast<float>(lon);
     sat.altitude = static_cast<float>(altitude);
     sat.waveColor = QColor("#FFFFFF");
-    sat.coreColor = QColor("#FF0000");
+    sat.coreColor = QColor(m_satelliteColor);
     sat.shieldColor = QColor("#FFFFFF");
     sat.size = 1.0f;
     
