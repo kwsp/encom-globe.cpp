@@ -122,8 +122,8 @@ void main()
     for (int i = 0; i < numWavesCount; i++) {
         float wavePhase = mod(t / waveDuration - float(i) * waveInterval / waveDuration, 1.0);
         float waveRadius = mix(0.15, 0.95, wavePhase);
-        float waveAlpha = (1.0 - wavePhase) * 0.85;
-        float waveThickness = 0.02 + 0.01 * wavePhase;
+        float waveAlpha = 1.2 * (1.0 - wavePhase * 0.5);
+        float waveThickness = 0.04 + 0.02 * wavePhase;
         float waveRing = smoothstep(waveRadius + waveThickness, waveRadius, dist)
                         * smoothstep(waveRadius - waveThickness, waveRadius, dist);
         float angleDiff = abs(mod(angle - ubuf.arcAngle + PI, 2.0 * PI) - PI);
