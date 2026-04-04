@@ -45,10 +45,19 @@ cmake --build .
 
 To use `EncomGlobeLib` in your own project, follow these steps:
 
-### 1. CMake Setup
-Add the library and its plugin to your `target_link_libraries`. You must link both the backing library and the generated QML plugin:
+### 1. CMake Setup (using FetchContent)
+Add the following to your `CMakeLists.txt` to pull the library directly into your project:
 
 ```cmake
+include(FetchContent)
+FetchContent_Declare(
+    EncomGlobe
+    GIT_REPOSITORY https://github.com/kwsp/encom-globe.cpp.git
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(EncomGlobe)
+
+# Link both the backing library and the generated QML plugin
 target_link_libraries(MyProject PRIVATE
     EncomGlobeLib
     EncomGlobeLibplugin
