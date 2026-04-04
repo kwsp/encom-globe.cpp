@@ -241,6 +241,7 @@ void GlobeRenderer::setTileData(const QJsonObject& data) {
     QJsonArray tiles = data["tiles"].toArray();
     
     QColor baseColor = Utils::hexToColor(m_baseColor);
+    auto palette = Utils::hueSet(baseColor);
     
     for (const QJsonValue& tileVal : tiles) {
         QJsonObject tile = tileVal.toObject();
@@ -265,7 +266,7 @@ void GlobeRenderer::setTileData(const QJsonObject& data) {
         }
         
         // Generate triangles: fan from first boundary vertex
-        QColor tileColor = Utils::randomColorVariation(baseColor);
+        QColor tileColor = Utils::randomTileColor(palette);
         
         for (int i = 1; i < numBounds - 1; ++i) {
             Vertex v0;

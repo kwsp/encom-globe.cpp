@@ -130,6 +130,15 @@ void Globe::setIntroLinesColor(const QString& color)
     }
 }
 
+void Globe::setMarkerSize(qreal size)
+{
+    if (!qFuzzyCompare(m_markerSize, size)) {
+        m_markerSize = size;
+        emit markerSizeChanged();
+        update();
+    }
+}
+
 void Globe::setIntroDuration(qreal duration)
 {
     if (!qFuzzyCompare(m_introDuration, duration)) {
@@ -445,6 +454,7 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
     // Update marker renderer
     markerNode->setMVP(mvp);
     markerNode->setCameraPosition(cameraPos);
+    markerNode->setSpriteScale(static_cast<float>(m_markerSize));
     
     if (m_geometryChanged) {
         markerNode->setSize(QSizeF(width(), height()));

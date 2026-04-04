@@ -32,6 +32,7 @@ public:
     void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
     void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
     void setSize(const QSizeF& size) { m_size = size; }
+    void setSpriteScale(float scale) { m_spriteScale = scale; }
     void setMarkers(const std::vector<MarkerData>& markers);
 
 private:
@@ -91,5 +92,6 @@ private:
     QMatrix4x4 m_mvp;
     QVector3D m_cameraPos;
     QSizeF m_size;
+    float m_spriteScale = 1.0f;
     int m_lineVertexCapacity = 0;
 };

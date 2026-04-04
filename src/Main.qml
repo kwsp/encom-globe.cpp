@@ -22,6 +22,7 @@ ApplicationWindow {
         markerColor: "#ffcc00"
         satelliteColor: "#ff0000"
         introLinesColor: "#8FD8D8"
+        markerSize: 0.5
         introDuration: 2000
         
         // Add some test satellites after intro

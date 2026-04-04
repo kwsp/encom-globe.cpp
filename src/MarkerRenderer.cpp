@@ -147,7 +147,7 @@ void MarkerRenderer::render(const RenderState* state) {
         up = QVector3D::crossProduct(toCamera, right).normalized();
 
         float distToCam = (m_cameraPos - pos).length();
-        float scale = 35.0f * mk.markerProgress * (distToCam / Utils::CAMERA_DISTANCE);
+        float scale = 35.0f * m_spriteScale * mk.markerProgress * (distToCam / Utils::CAMERA_DISTANCE);
 
         QMatrix4x4 model;
         model.setColumn(0, QVector4D(right * scale, 0));

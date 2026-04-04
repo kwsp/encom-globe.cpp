@@ -40,18 +40,51 @@ inline QColor hexToColor(const QString& hex) {
     return QColor(0xFF, 0xCC, 0x00); // default golden
 }
 
+// Generate a palette matching pusherColor().hueSet()
+// Same hue, varying saturation (100,65,30) and value (100,65,30) = 9 colors
+inline std::vector<QColor> hueSet(const QColor& base) {
+    float h, s, v, a;
+    base.getHsvF(&h, &s, &v, &a);
+    
+    std::vector<QColor> colors;
+    // saturation: 100%, 65%, 30%  value: 100%, 65%, 30%
+    float sats[] = { 1.0f, 0.65f, 0.30f };
+    float vals[] = { 1.0f, 0.65f, 0.30f };
+    for (float sv : sats) {
+        for (float vv : vals) {
+            QColor c;
+            c.setHsvF(h, sv, vv, 1.0f);
+            colors.push_back(c);
+        }
+    }
+    return colors;
+}
+
+// Pick a random color from the hue set and blend toward black by 0-33%
+// (matches shade(Math.random()/3.0) in the original)
+inline QColor randomTileColor(const std::vector<QColor>& palette) {
+    auto* rng = QRandomGenerator::global();
+    int idx = rng->bounded(static_cast<int>(palette.size()));
+    QColor c = palette[idx];
+    
+    // shade(amount) = blend toward black by amount
+    float amount = rng->bounded(1.0) / 3.0f;
+    int r = static_cast<int>(c.red() * (1.0f - amount));
+    int g = static_cast<int>(c.green() * (1.0f - amount));
+    int b = static_cast<int>(c.blue() * (1.0f - amount));
+    return QColor(r, g, b);
+}
+
 inline QColor randomColorVariation(const QColor& base, float variance = 0.2f) {
     float h, s, v, a;
     base.getHsvF(&h, &s, &v, &a);
     
     auto* rng = QRandomGenerator::global();
     
-    // Random hue shift
     h += (rng->bounded(1.0) - 0.5f) * variance * 0.1f;
     while (h < 0) h += 1.0f;
     while (h > 1) h -= 1.0f;
     
-    // Random value shift
     v += (rng->bounded(1.0) - 0.5f) * variance;
     v = qBound(0.0f, v, 1.0f);
     
