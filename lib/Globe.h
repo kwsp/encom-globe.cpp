@@ -53,6 +53,10 @@ class Globe : public QQuickItem {
 
 public:
   explicit Globe(QQuickItem *parent = nullptr);
+  Globe(Globe &&) = delete;
+  Globe(const Globe &) = delete;
+  Globe operator=(Globe &&) = delete;
+  Globe &operator=(const Globe &) = delete;
   ~Globe() override;
 
   qreal dayLength() const { return m_dayLength; }
@@ -96,7 +100,7 @@ public:
 
   QVariantList pinLabels() const { return m_pinLabels; }
 
-  QSGNode *updatePaintNode(QSGNode *old, UpdatePaintNodeData *) override;
+  QSGNode *updatePaintNode(QSGNode *old, UpdatePaintNodeData *data) override;
 
   Q_INVOKABLE void addPin(qreal lat, qreal lon,
                           const QString &label = QString());
