@@ -3,9 +3,11 @@
 #include <QElapsedTimer>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QMatrix4x4>
 #include <QQuickItem>
 #include <QTimer>
 #include <QVariantList>
+#include <QVector3D>
 #include <vector>
 
 class GlobeRenderer;
@@ -138,6 +140,19 @@ private Q_SLOTS:
 private:
   void loadTileData();
   void scheduleUpdate();
+  void updateFrameData(); // Centralized calculation
+
+  struct FrameData {
+    qint64 timeMs{0};
+    float dt{0.0f};
+    float cameraAngle{0.0f};
+    float cameraDist{0.0f};
+    QVector3D cameraPos;
+    QVector3D viewDir;
+    QMatrix4x4 view;
+    QMatrix4x4 projection;
+    QMatrix4x4 mvp;
+  } m_frame;
 
   // Configuration
   qreal m_dayLength{28000.0};
