@@ -142,16 +142,20 @@ private:
   void scheduleUpdate();
   void updateFrameData(); // Centralized calculation
 
+  /**
+   * @brief Shared state calculated once per frame to be reused by both UI and
+   * Render logic.
+   */
   struct FrameData {
-    qint64 timeMs{0};
-    float dt{0.0f};
-    float cameraAngle{0.0f};
-    float cameraDist{0.0f};
-    QVector3D cameraPos;
-    QVector3D viewDir;
-    QMatrix4x4 view;
-    QMatrix4x4 projection;
-    QMatrix4x4 mvp;
+    float timeMs{};      // Elapsed time since start in milliseconds
+    float dt{};          // Delta time (seconds since last frame) for animations
+    float cameraAngle{}; // Current orbiting angle in radians
+    float cameraDist{};  // Current camera dist from origin
+    QVector3D cameraPos; // Camera pos in world space
+    QVector3D viewDir;   // Normalized dir from origin to camera (for depth fog)
+    QMatrix4x4 view;     // LookAt view matrix
+    QMatrix4x4 projection; // Perspective projection matrix
+    QMatrix4x4 mvp;        // Combined Model-View-Projection matrix
   } m_frame;
 
   // Configuration
