@@ -17,16 +17,8 @@ Globe::Globe(QQuickItem* parent)
     setFlag(ItemHasContents, true);
     setAcceptedMouseButtons(Qt::AllButtons);
     
-    // Start animation timer
+    // Logic timer removed in favor of VSync-driven update()
     m_elapsed.start();
-    m_startTime = m_elapsed.elapsed();
-    
-    // Logic timer for QML property updates
-    m_updateTimer = new QTimer(this);
-    connect(m_updateTimer, &QTimer::timeout, this, &Globe::updateState);
-    m_updateTimer->start(16);
-    
-    m_startTime = -1; // Flag to set on first update
 }
 
 Globe::~Globe() = default;
@@ -228,6 +220,7 @@ void Globe::addSatellite(qreal lat, qreal lon, qreal altitude)
     sat.coreColor = QColor(m_satelliteColor);
     sat.shieldColor = QColor("#FFFFFF");
     sat.size = 1.0f;
+    sat.progress = 0.0f;
     
     m_satellites.push_back(sat);
     m_satellitesChanged = true;
@@ -251,9 +244,20 @@ void Globe::updateState()
     if (m_startTime == -1) {
         return; // Don't start logic until first render frame
     }
+
+    const qint64 currentTimeMs = m_elapsed.elapsed();
+    const qint64 currentTime = currentTimeMs - m_startTime;
+
+    if (m_lastFrameTime == 0) {
+        m_lastFrameTime = currentTimeMs;
+        update();
+        return;
+    }
+
+    const float dt = static_cast<float>(currentTimeMs - m_lastFrameTime) / 1000.0f;
+    m_lastFrameTime = currentTimeMs;
     
     // Calculate MVP here so we can project labels to 2D
-    const qint64 currentTime = m_elapsed.elapsed() - m_startTime;
     const float cameraAngle = static_cast<float>(m_rotationOffset) + static_cast<float>(M_PI) + (2.0f * M_PI * currentTime) / m_dayLength;
     const float dist = Utils::CAMERA_DISTANCE / static_cast<float>(m_scale);
     
@@ -272,56 +276,65 @@ void Globe::updateState()
     
     QVariantList newLabels;
     
-    // Animate satellite intro growth (0→1 over ~500ms = ~30 frames at 16ms)
+    // Animate satellite intro growth (duration ~300ms)
     for (auto& sat : m_satellites) {
         if (sat.progress < 1.0f) {
-            sat.progress += 0.033f; // ~500ms to reach 1.0
+            sat.progress += dt / 0.3f; 
             if (sat.progress > 1.0f) sat.progress = 1.0f;
             m_satellitesChanged = true;
         }
     }
     
-    // Animate pin progress and create label data
-    for (auto& pin : m_pins) {
-        if (pin.progress < 1.0f) {
-            pin.progress += 0.016f;
-            if (pin.progress > 1.0f) pin.progress = 1.0f;
+    // Animate pin progress and create label data (duration ~1000ms)
+    for (auto& pinItem : m_pins) {
+        if (pinItem.progress < 1.0f) {
+            pinItem.progress += dt / 1.0f;
+            if (pinItem.progress > 1.0f) pinItem.progress = 1.0f;
             m_pinsChanged = true;
         }
         
-        if (!pin.text.isEmpty() && pin.progress > 0.3f) {
-            float animatedProgress = Utils::elasticOut(pin.progress);
-            float currentAltitude = 1.0f + (pin.altitude - 1.0f) * animatedProgress + 0.05f;
-            QVector3D pos = Utils::latLonToXYZ(pin.lat, pin.lon, Utils::GLOBE_RADIUS * currentAltitude);
+        if (!pinItem.text.isEmpty() && pinItem.progress > 0.3f) {
+            float animatedProgress = Utils::elasticOut(pinItem.progress);
+            float currentAltitude = 1.0f + (pinItem.altitude - 1.0f) * animatedProgress + 0.05f;
+            QVector3D pos = Utils::latLonToXYZ(pinItem.lat, pinItem.lon, Utils::GLOBE_RADIUS * currentAltitude);
             
             QVector4D clipPos = viewProj * QVector4D(pos, 1.0f);
             if (clipPos.w() > 0.0f) {
                 float ndcX = clipPos.x() / clipPos.w();
                 float ndcY = clipPos.y() / clipPos.w();
-                QVector3D surfacePos = Utils::latLonToXYZ(pin.lat, pin.lon, Utils::GLOBE_RADIUS);
+                QVector3D surfacePos = Utils::latLonToXYZ(pinItem.lat, pinItem.lon, Utils::GLOBE_RADIUS);
                 if (QVector3D::dotProduct(surfacePos.normalized(), cameraPos.normalized()) > -0.2f) {
                     QVariantMap map;
                     map["x"] = (ndcX + 1.0f) * 0.5f * width();
                     map["y"] = (1.0f - ndcY) * 0.5f * height();
-                    map["text"] = pin.text;
-                    map["opacity"] = (pin.progress - 0.3f) / 0.7f;
+                    map["text"] = pinItem.text;
+                    map["opacity"] = (pinItem.progress - 0.3f) / 0.7f;
                     newLabels.append(map);
                 }
             }
         }
     }
     
-    // Animate markers and add labels
-    for (auto& mk : m_markers) {
+    // Animate markers and add labels (line duration ~2000ms, marker duration ~500ms)
+    for (size_t mi = 0; mi < m_markers.size(); ++mi) {
+        auto& mk = m_markers[mi];
         bool changed = false;
-        if (mk.lineProgress < 1.0f) {
-            mk.lineProgress += 0.008f;
+        
+        // Sequential animation: wait for previous arc to finish before starting
+        bool canAnimate = true;
+        if (mk.previousIndex >= 0 && mk.previousIndex < (int)m_markers.size()) {
+            canAnimate = m_markers[mk.previousIndex].lineProgress >= 1.0f;
+        }
+        
+        if (canAnimate && mk.lineProgress < 1.0f) {
+            mk.lineProgress += dt / 2.0f;
             if (mk.lineProgress > 1.0f) mk.lineProgress = 1.0f;
             changed = true;
         }
+        
         float markerDelay = (mk.previousIndex >= 0) ? 0.8f : 0.0f;
         if (mk.lineProgress > markerDelay && mk.markerProgress < 1.0f) {
-            mk.markerProgress += 0.02f;
+            mk.markerProgress += dt / 0.5f;
             if (mk.markerProgress > 1.0f) mk.markerProgress = 1.0f;
             changed = true;
         }
@@ -550,8 +563,8 @@ QSGNode* Globe::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data)
         m_geometryChanged = false;
     }
     
-    // Schedule next frame for animation
-    update(); // Since globe rotates anyway, keep updating
+    // Schedule next frame for animation (VSync synchronized)
+    updateState(); 
     
     return root;
 }

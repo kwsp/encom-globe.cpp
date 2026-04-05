@@ -34,6 +34,17 @@
 - [x] Cross-platform testing readiness
 - [x] Documentation (README.md)
 
+## Phase 5: Future Optimizations & Refactoring
+- [x] **Architectural: Common Base Class**: Centralize shared state (`mvp`, `viewDir`, `viewportRect`) into a `GlobeRenderNode` base class to reduce boilerplate.
+- [x] **Base Class Helpers**: `loadShader()`, `alphaBlend()`, `copyMvp()`, `billboardMatrix()` — eliminated ~176 lines of duplicated code across 6 renderers.
+- [x] **Performance: Frame-rate Independence**: Converted fixed 16ms logic to a VSync-driven variable delta-time (`dt`) system for perfect smoothness on high-refresh displays.
+- [x] **Sequential Marker Animation**: Each marker arc waits for its predecessor to finish drawing before starting.
+- [x] **Dead Code Removal**: Removed unused `GlobeRenderer::tick()`, `Utils::randomColorVariation()`.
+- [ ] **Batching: Unified Line Renderer**: Merge `Pin`, `Marker`, and `IntroLine` renderers into a single vertex buffer to reduce draw calls.
+- [ ] **Performance: GPU Instancing**: Use `drawInstanced` for satellites and pin heads to move the drawing loop from CPU to GPU.
+- [ ] **Efficiency: Worker-Thread Projection**: Move 3D-to-2D label projection off the main thread to prevent UI stutter with high pin counts.
+- [ ] **Stability: Triple Buffering**: Implement a buffer rotation strategy for frequently updated dynamic data (smoke, animated lines).
+
 ## Port Complete! 🚀
 The `encom-globe` port to C++/Qt Quick is now feature-complete and optimized. 
 Architecture uses pure RHI for custom graphics and native QML for UI/Labels.

@@ -57,8 +57,9 @@ While the original mixed colors with black to simulate fog, this port directly m
 A common bug in the original was smoke particles being visible through the "back" of the globe tiles.
 - **Fix**: By using a slightly more aggressive fog cutoff for the `SmokeRenderer` than the `GlobeRenderer`, particles are guaranteed to vanish before they reach the back side, ensuring perfect occlusion without expensive depth sorting.
 
-### 4. Optimized Multi-Instance Drawing
-Instead of updating uniform buffers once per object (which is slow in modern APIs like Metal), this port uses **Dynamic Uniform Offsets**. All instance data is uploaded in a single block, and each draw call simply points to a different offset in GPU memory.
+### 5. VSync-Driven Animation (Frame-rate Independence)
+The animation logic was refactored from a fixed 16ms timer to a variable delta-time (`dt`) system. 
+- **Benefit**: Animations are now perfectly smooth on high-refresh-rate displays (120Hz/144Hz) and maintain correct timing regardless of actual system performance. Logic is synchronized with the display's VSync via the Qt Quick Scene Graph.
 
 ## Integration in C++/CMake
 
