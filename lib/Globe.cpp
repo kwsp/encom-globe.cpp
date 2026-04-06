@@ -170,6 +170,14 @@ void Globe::setIntroDuration(qreal duration) {
     }
 }
 
+void Globe::setStartupDelay(qreal delay) {
+    if (!qFuzzyCompare(m_startupDelay, delay)) {
+        m_startupDelay = delay;
+        emit startupDelayChanged();
+        update();
+    }
+}
+
 void Globe::addPin(qreal lat, qreal lon, const QString &label) {
     PinData pin;
     pin.lat = static_cast<float>(lat);
@@ -243,12 +251,20 @@ void Globe::updateFrameData() {
         m_elapsed.start();
         m_startTime = 0;
         m_lastFrameTime = 0;
+        m_lastActiveTimeMs = 0.0f;
     }
 
     const qint64 currentTimeMs = m_elapsed.elapsed();
-    m_frame.timeMs = static_cast<float>(currentTimeMs - m_startTime);
-    m_frame.dt = static_cast<float>((currentTimeMs - m_lastFrameTime) / 1000.0);
+    
+    // Calculate raw elapsed time and active time (after startup delay)
+    float rawTimeMs = static_cast<float>(currentTimeMs - m_startTime);
+    float activeTimeMs = std::max(0.0f, rawTimeMs - static_cast<float>(m_startupDelay));
+
+    m_frame.timeMs = activeTimeMs;
+    m_frame.dt = (activeTimeMs - m_lastActiveTimeMs) / 1000.0f;
+    
     m_lastFrameTime = currentTimeMs;
+    m_lastActiveTimeMs = activeTimeMs;
 
     // View State Calculation (Once per frame)
     m_frame.cameraAngle = static_cast<float>(m_rotationOffset) + std::numbers::pi_v<float> +

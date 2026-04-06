@@ -94,6 +94,8 @@ class Globe : public QQuickItem {
                    introLinesColorChanged)
     Q_PROPERTY(qreal introDuration READ introDuration WRITE setIntroDuration NOTIFY
                    introDurationChanged) // animation duration in ms
+    Q_PROPERTY(qreal startupDelay READ startupDelay WRITE setStartupDelay NOTIFY
+                   startupDelayChanged) // delay before animation starts in ms
     Q_PROPERTY(qreal markerSize READ markerSize WRITE setMarkerSize NOTIFY
                    markerSizeChanged) // scale multiplier for marker sprites
     Q_PROPERTY(qreal rotationOffset READ rotationOffset WRITE setRotationOffset NOTIFY
@@ -125,6 +127,9 @@ public:
 
     qreal introDuration() const { return m_introDuration; }
     void setIntroDuration(qreal duration);
+
+    qreal startupDelay() const { return m_startupDelay; }
+    void setStartupDelay(qreal delay);
 
     QString pinColor() const { return m_pinColor; }
     void setPinColor(const QString &color);
@@ -174,6 +179,7 @@ Q_SIGNALS:
     void pinHeadSizeChanged();
     void showLabelsChanged();
     void introDurationChanged();
+    void startupDelayChanged();
     void pinLabelsChanged();
 
 protected:
@@ -220,6 +226,7 @@ private:
     qreal m_pinHeadSize{0.2};
     bool m_showLabels{false};
     qreal m_introDuration{2000.0};
+    qreal m_startupDelay{0.0};
 
     // State
     QJsonObject m_tileData;
@@ -249,4 +256,5 @@ private:
     QElapsedTimer m_elapsed;
     qint64 m_startTime{-1};
     qint64 m_lastFrameTime{0};
+    float m_lastActiveTimeMs{0.0f};
 };

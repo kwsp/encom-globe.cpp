@@ -14,6 +14,8 @@ ApplicationWindow {
         id: globe
         anchors.fill: parent
         
+        startupDelay: 5000 // 5 second pause before animations begin
+        
         dayLength: 28000  // ms per rotation
         scale: 1.0        // zoom factor
         viewAngle: 0.1    // tilt in radians
