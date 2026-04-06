@@ -20,6 +20,41 @@ struct SatelliteData;
 struct PinData;
 struct MarkerData;
 
+class GlobeLabel : public QObject {
+  Q_OBJECT
+  Q_PROPERTY(qreal x READ x WRITE setX NOTIFY xChanged)
+  Q_PROPERTY(qreal y READ y WRITE setY NOTIFY yChanged)
+  Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
+  Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
+
+public:
+  explicit GlobeLabel(QObject *parent = nullptr) : QObject(parent) {}
+  
+  qreal x() const { return m_x; }
+  void setX(qreal x) { if (!qFuzzyCompare(m_x, x)) { m_x = x; emit xChanged(); } }
+
+  qreal y() const { return m_y; }
+  void setY(qreal y) { if (!qFuzzyCompare(m_y, y)) { m_y = y; emit yChanged(); } }
+
+  qreal opacity() const { return m_opacity; }
+  void setOpacity(qreal opacity) { if (!qFuzzyCompare(m_opacity, opacity)) { m_opacity = opacity; emit opacityChanged(); } }
+
+  QString text() const { return m_text; }
+  void setText(const QString &text) { if (m_text != text) { m_text = text; emit textChanged(); } }
+
+signals:
+  void xChanged();
+  void yChanged();
+  void opacityChanged();
+  void textChanged();
+
+private:
+  qreal m_x = 0.0;
+  qreal m_y = 0.0;
+  qreal m_opacity = 0.0;
+  QString m_text;
+};
+
 class Globe : public QQuickItem {
   Q_OBJECT
   QML_ELEMENT
@@ -51,7 +86,7 @@ class Globe : public QQuickItem {
                  pinHeadSizeChanged) // scale multiplier for pin heads
   Q_PROPERTY(bool showLabels READ showLabels WRITE setShowLabels NOTIFY
                  showLabelsChanged)
-  Q_PROPERTY(QVariantList pinLabels READ pinLabels NOTIFY pinLabelsChanged)
+  Q_PROPERTY(QQmlListProperty<QObject> pinLabels READ pinLabels NOTIFY pinLabelsChanged)
 
 public:
   explicit Globe(QQuickItem *parent = nullptr);
@@ -100,7 +135,7 @@ public:
   bool showLabels() const { return m_showLabels; }
   void setShowLabels(bool show);
 
-  QVariantList pinLabels() const { return m_pinLabels; }
+  QQmlListProperty<QObject> pinLabels();
 
   QSGNode *updatePaintNode(QSGNode *old, UpdatePaintNodeData *data) override;
 
@@ -133,11 +168,13 @@ protected:
   void geometryChange(const QRectF &newGeometry,
                       const QRectF &oldGeometry) override;
   void componentComplete() override;
+  void itemChange(ItemChange change, const ItemChangeData &data) override;
 
 private Q_SLOTS:
-  void updateState();
+  void syncAnimation();
 
 private:
+  void updateState();
   void loadTileData();
   void scheduleUpdate();
   void updateFrameData(); // Centralized calculation
@@ -185,7 +222,7 @@ private:
   // Pins
   std::vector<PinData> m_pins;
   bool m_pinsChanged{false};
-  QVariantList m_pinLabels;
+  QList<QObject*> m_pinLabelsList;
 
   // Markers
   std::vector<MarkerData> m_markers;

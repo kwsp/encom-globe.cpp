@@ -15,6 +15,8 @@ struct MarkerData {
     int previousIndex = -1;       // Index of connected marker, -1 if none
     float lineProgress = 0.0f;    // 0-1 for arc draw animation
     float markerProgress = 0.0f;  // 0-1 for marker sprite pop-in
+    QVector3D basePos;
+    QVector3D pos;
 };
 
 class MarkerRenderer : public QSGRenderNode {

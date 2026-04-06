@@ -13,6 +13,8 @@ struct PinData {
     QColor color = QColor("#8FD8D8");
     QString text;
     float progress = 1.0f; // 0.0 to 1.0 for elastic growth animation
+    QVector3D basePos;
+    QVector3D endPos;
 };
 
 class PinRenderer : public QSGRenderNode {

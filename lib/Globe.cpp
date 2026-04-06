@@ -17,11 +17,26 @@ Globe::Globe(QQuickItem *parent) : QQuickItem(parent) {
   setAcceptedMouseButtons(Qt::AllButtons);
 }
 
-Globe::~Globe() = default;
+Globe::~Globe() {
+  qDeleteAll(m_pinLabelsList);
+}
 
 void Globe::componentComplete() {
   QQuickItem::componentComplete();
   loadTileData();
+}
+
+void Globe::itemChange(ItemChange change, const ItemChangeData &data) {
+  QQuickItem::itemChange(change, data);
+  if (change == ItemSceneChange && data.window) {
+    connect(data.window, &QQuickWindow::afterAnimating, this, &Globe::syncAnimation);
+  }
+}
+
+void Globe::syncAnimation() {
+  updateFrameData();
+  updateState();
+  update();
 }
 
 void Globe::geometryChange(const QRectF &newGeometry,
@@ -144,6 +159,10 @@ void Globe::setShowLabels(bool show) {
   }
 }
 
+QQmlListProperty<QObject> Globe::pinLabels() {
+  return QQmlListProperty<QObject>(this, &m_pinLabelsList);
+}
+
 void Globe::setIntroDuration(qreal duration) {
   if (!qFuzzyCompare(m_introDuration, duration)) {
     m_introDuration = duration;
@@ -160,6 +179,8 @@ void Globe::addPin(qreal lat, qreal lon, const QString &label) {
   pin.text = label;
   pin.progress = 0.0f;
   pin.color = QColor(m_pinColor);
+  pin.basePos = Utils::latLonToXYZ(pin.lat, pin.lon, Utils::GLOBE_RADIUS);
+  pin.endPos = Utils::latLonToXYZ(pin.lat, pin.lon, Utils::GLOBE_RADIUS * pin.altitude);
 
   m_pins.push_back(pin);
   m_pinsChanged = true;
@@ -177,6 +198,8 @@ void Globe::addMarker(qreal lat, qreal lon, const QString &label,
   mk.color = QColor(m_markerColor);
   mk.lineProgress = 0.0f;
   mk.markerProgress = 0.0f;
+  mk.basePos = Utils::latLonToXYZ(mk.lat, mk.lon, Utils::GLOBE_RADIUS);
+  mk.pos = Utils::latLonToXYZ(mk.lat, mk.lon, Utils::GLOBE_RADIUS * mk.altitude);
 
   if (connected && !m_markers.empty()) {
     mk.previousIndex = static_cast<int>(m_markers.size()) - 1;
@@ -200,6 +223,7 @@ void Globe::addSatellite(qreal lat, qreal lon, qreal altitude) {
   sat.shieldColor = QColor("#FFFFFF");
   sat.size = 1.0f;
   sat.progress = 0.0f;
+  sat.pos = Utils::latLonToXYZ(sat.lat, sat.lon, Utils::GLOBE_RADIUS * sat.altitude);
 
   m_satellites.push_back(sat);
   m_satellitesChanged = true;
@@ -252,10 +276,11 @@ void Globe::updateFrameData() {
 }
 
 void Globe::updateState() {
-  // Frame logic (Animations + Label Projections)
-  // updateFrameData() must have been called by updatePaintNode() first
+  // Pre-calculate variables
+  const float halfW = width() * 0.5f;
+  const float halfH = height() * 0.5f;
 
-  QVariantList newLabels;
+  int labelIdx = 0;
 
   // Animate satellite intro growth
   for (auto &sat : m_satellites) {
@@ -278,25 +303,28 @@ void Globe::updateState() {
 
     if (!pinItem.text.isEmpty() && pinItem.progress > 0.3f) {
       float animatedProgress = Utils::elasticOut(pinItem.progress);
-      float currentAltitude =
-          1.0f + (pinItem.altitude - 1.0f) * animatedProgress + 0.05f;
-      QVector3D pos = Utils::latLonToXYZ(pinItem.lat, pinItem.lon,
-                                         Utils::GLOBE_RADIUS * currentAltitude);
+      QVector3D pos = pinItem.basePos + (pinItem.endPos - pinItem.basePos) * animatedProgress;
 
       QVector4D clipPos = m_frame.mvp * QVector4D(pos, 1.0f);
       if (clipPos.w() > 0.0f) {
         float ndcX = clipPos.x() / clipPos.w();
         float ndcY = clipPos.y() / clipPos.w();
-        QVector3D surfacePos =
-            Utils::latLonToXYZ(pinItem.lat, pinItem.lon, Utils::GLOBE_RADIUS);
-        if (QVector3D::dotProduct(surfacePos.normalized(), m_frame.viewDir) >
+        if (QVector3D::dotProduct(pinItem.basePos / 100.0f, m_frame.viewDir) >
             -0.2f) {
-          QVariantMap map;
-          map["x"] = (ndcX + 1.0f) * 0.5f * width();
-          map["y"] = (1.0f - ndcY) * 0.5f * height();
-          map["text"] = pinItem.text;
-          map["opacity"] = (pinItem.progress - 0.3f) / 0.7f;
-          newLabels.append(map);
+          
+          GlobeLabel* lbl;
+          if (labelIdx < m_pinLabelsList.size()) {
+            lbl = static_cast<GlobeLabel*>(m_pinLabelsList[labelIdx]);
+          } else {
+            lbl = new GlobeLabel(this);
+            m_pinLabelsList.append(lbl);
+            emit pinLabelsChanged();
+          }
+          lbl->setX((ndcX + 1.0f) * halfW);
+          lbl->setY((1.0f - ndcY) * halfH);
+          lbl->setText(pinItem.text);
+          lbl->setOpacity((pinItem.progress - 0.3f) / 0.7f);
+          labelIdx++;
         }
       }
     }
@@ -328,22 +356,27 @@ void Globe::updateState() {
     }
 
     if (!mk.text.isEmpty() && mk.markerProgress > 0.1f) {
-      QVector3D pos = Utils::latLonToXYZ(
-          mk.lat, mk.lon, Utils::GLOBE_RADIUS * mk.altitude + 30.0f);
+      QVector3D pos = mk.pos + (mk.basePos / 100.0f) * 30.0f; // offset slightly out
       QVector4D clipPos = m_frame.mvp * QVector4D(pos, 1.0f);
       if (clipPos.w() > 0.0f) {
         float ndcX = clipPos.x() / clipPos.w();
         float ndcY = clipPos.y() / clipPos.w();
-        QVector3D surfacePos =
-            Utils::latLonToXYZ(mk.lat, mk.lon, Utils::GLOBE_RADIUS);
-        if (QVector3D::dotProduct(surfacePos.normalized(), m_frame.viewDir) >
+        if (QVector3D::dotProduct(mk.basePos / 100.0f, m_frame.viewDir) >
             -0.2f) {
-          QVariantMap map;
-          map["x"] = (ndcX + 1.0f) * 0.5f * width();
-          map["y"] = (1.0f - ndcY) * 0.5f * height();
-          map["text"] = mk.text;
-          map["opacity"] = mk.markerProgress;
-          newLabels.append(map);
+          
+          GlobeLabel* lbl;
+          if (labelIdx < m_pinLabelsList.size()) {
+            lbl = static_cast<GlobeLabel*>(m_pinLabelsList[labelIdx]);
+          } else {
+            lbl = new GlobeLabel(this);
+            m_pinLabelsList.append(lbl);
+            emit pinLabelsChanged();
+          }
+          lbl->setX((ndcX + 1.0f) * halfW);
+          lbl->setY((1.0f - ndcY) * halfH);
+          lbl->setText(mk.text);
+          lbl->setOpacity(mk.markerProgress);
+          labelIdx++;
         }
       }
     }
@@ -353,8 +386,11 @@ void Globe::updateState() {
     }
   }
 
-  if (newLabels != m_pinLabels) {
-    m_pinLabels = newLabels;
+  // Remove excess labels
+  if (labelIdx < m_pinLabelsList.size()) {
+    while (m_pinLabelsList.size() > labelIdx) {
+      delete m_pinLabelsList.takeLast();
+    }
     emit pinLabelsChanged();
   }
 }
@@ -364,12 +400,6 @@ QSGNode *Globe::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) {
   if (!root) {
     root = new QSGNode();
   }
-
-  // 1. Calculate shared frame data ONCE
-  updateFrameData();
-
-  // 2. Perform UI logic (animations + labels) using that data
-  updateState();
 
   // Get or create renderers
   auto *globeNode = static_cast<GlobeRenderer *>(
