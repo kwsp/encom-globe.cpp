@@ -110,8 +110,8 @@ void GlobeRenderer::createPipeline(QRhi *rhi) {
 
     // Create vertex buffer if we have data and it doesn't exist
     if (!m_vertices.empty() && !m_rhiResources.vertexBuffer) {
-        m_rhiResources.vertexBuffer = rhi->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer,
-                                        m_vertices.size() * sizeof(Vertex));
+        m_rhiResources.vertexBuffer = rhi->newBuffer(
+            QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer, m_vertices.size() * sizeof(Vertex));
         if (!m_rhiResources.vertexBuffer->create()) {
             qWarning() << "Failed to create vertex buffer";
         } else {

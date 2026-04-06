@@ -82,7 +82,8 @@ void IntroLinesRenderer::render(const RenderState *state) {
             return;
     }
 
-    if (!m_rhiResources.pipeline || m_rhiResources.pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
+    if (!m_rhiResources.pipeline ||
+        m_rhiResources.pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
         createPipeline(r);
     }
     if (!m_rhiResources.pipeline)
@@ -141,7 +142,7 @@ void IntroLinesRenderer::render(const RenderState *state) {
 void IntroLinesRenderer::initializeRHI(QRhi *rhi) {
     generateLines();
     m_rhiResources.vertexBuffer = rhi->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer,
-                                    m_vertices.size() * sizeof(Vertex));
+                                                 m_vertices.size() * sizeof(Vertex));
     m_rhiResources.vertexBuffer->create();
 
     m_rhiResources.uniformBuffer =
@@ -174,7 +175,8 @@ void IntroLinesRenderer::createPipeline(QRhi *rhi) {
         fs.close();
     }
 
-    m_rhiResources.pipeline->setShaderStages({{QRhiShaderStage::Vertex, v}, {QRhiShaderStage::Fragment, f}});
+    m_rhiResources.pipeline->setShaderStages(
+        {{QRhiShaderStage::Vertex, v}, {QRhiShaderStage::Fragment, f}});
 
     QRhiVertexInputLayout layout;
     layout.setBindings({{sizeof(Vertex)}});

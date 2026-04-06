@@ -1,11 +1,11 @@
 #pragma once
 
+#include "RhiResources.h"
 #include <QColor>
 #include <QMatrix4x4>
 #include <QSGRenderNode>
 #include <rhi/qrhi.h>
 #include <vector>
-#include "RhiResources.h"
 
 struct MarkerData {
     float lat;

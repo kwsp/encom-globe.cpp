@@ -116,8 +116,8 @@ void PinRenderer::render(const RenderState *state) {
         topUbuf.viewDir[1] = m_viewDir.y();
         topUbuf.viewDir[2] = m_viewDir.z();
 
-        rub->updateDynamicBuffer(m_topResources.uniformBuffer, i * UNIFORM_ALIGNMENT, sizeof(TopUniformData),
-                                 &topUbuf);
+        rub->updateDynamicBuffer(m_topResources.uniformBuffer, i * UNIFORM_ALIGNMENT,
+                                 sizeof(TopUniformData), &topUbuf);
     }
 
     // Update vertex buffer if needed
@@ -175,7 +175,7 @@ void PinRenderer::updateBuffers(QRhi *rhi, QRhiResourceUpdateBatch *rub) {
         m_vertexCapacity = requiredVertices + 20;
 
         m_lineResources.vertexBuffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer,
-                                        m_vertexCapacity * sizeof(Vertex));
+                                                      m_vertexCapacity * sizeof(Vertex));
         if (!m_lineResources.vertexBuffer->create()) {
             qWarning() << "Failed to create pin vertex buffer";
             return;
@@ -255,16 +255,17 @@ void PinRenderer::initializeRHI(QRhi *rhi) {
     }
 
     m_topResources.uniformBuffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer,
-                                        UNIFORM_ALIGNMENT * MAX_PINS);
+                                                  UNIFORM_ALIGNMENT * MAX_PINS);
     if (!m_topResources.uniformBuffer->create()) {
         qWarning() << "Failed to create pintop uniform buffer";
         return;
     }
 
     m_topResources.shaderBindings = rhi->newShaderResourceBindings();
-    m_topResources.shaderBindings->setBindings({QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
-        0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
-        m_topResources.uniformBuffer, sizeof(TopUniformData))});
+    m_topResources.shaderBindings->setBindings(
+        {QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
+            0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
+            m_topResources.uniformBuffer, sizeof(TopUniformData))});
 
     if (!m_topResources.shaderBindings->create()) {
         qWarning() << "Failed to create pintop shader resource bindings";
@@ -374,7 +375,7 @@ void PinRenderer::createPipeline(QRhi *rhi) {
     }
 
     m_topResources.pipeline->setShaderStages({{QRhiShaderStage::Vertex, topVertexShader},
-                                    {QRhiShaderStage::Fragment, topFragmentShader}});
+                                              {QRhiShaderStage::Fragment, topFragmentShader}});
 
     QRhiVertexInputLayout topInputLayout;
     topInputLayout.setBindings({{sizeof(TopVertex)}});

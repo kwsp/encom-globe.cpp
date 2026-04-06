@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RhiResources.h"
 #include <QColor>
 #include <QJsonObject>
 #include <QMatrix4x4>
@@ -8,7 +9,6 @@
 #include <QSizeF>
 #include <rhi/qrhi.h>
 #include <vector>
-#include "RhiResources.h"
 
 class GlobeRenderer : public QSGRenderNode {
 public:

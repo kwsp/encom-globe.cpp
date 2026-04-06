@@ -45,7 +45,8 @@ void SmokeRenderer::render(const RenderState *state) {
             return;
     }
 
-    if (!m_rhiResources.pipeline || m_rhiResources.pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
+    if (!m_rhiResources.pipeline ||
+        m_rhiResources.pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
         createPipeline(r);
     }
     if (!m_rhiResources.pipeline)
@@ -74,8 +75,8 @@ void SmokeRenderer::render(const RenderState *state) {
 
     // Update vertex buffer if needed
     if (m_geometryDirty) {
-        rub->updateDynamicBuffer(m_rhiResources.vertexBuffer, 0, m_particles.size() * sizeof(ParticleVertex),
-                                 m_particles.data());
+        rub->updateDynamicBuffer(m_rhiResources.vertexBuffer, 0,
+                                 m_particles.size() * sizeof(ParticleVertex), m_particles.data());
         m_geometryDirty = false;
     }
 
@@ -96,7 +97,7 @@ void SmokeRenderer::render(const RenderState *state) {
 
 void SmokeRenderer::initializeRHI(QRhi *rhi) {
     m_rhiResources.vertexBuffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer,
-                                    MAX_PARTICLES * sizeof(ParticleVertex));
+                                                 MAX_PARTICLES * sizeof(ParticleVertex));
     m_rhiResources.vertexBuffer->create();
 
     m_rhiResources.uniformBuffer =
@@ -129,7 +130,8 @@ void SmokeRenderer::createPipeline(QRhi *rhi) {
         fs.close();
     }
 
-    m_rhiResources.pipeline->setShaderStages({{QRhiShaderStage::Vertex, v}, {QRhiShaderStage::Fragment, f}});
+    m_rhiResources.pipeline->setShaderStages(
+        {{QRhiShaderStage::Vertex, v}, {QRhiShaderStage::Fragment, f}});
 
     QRhiVertexInputLayout layout;
     layout.setBindings({{sizeof(ParticleVertex)}});

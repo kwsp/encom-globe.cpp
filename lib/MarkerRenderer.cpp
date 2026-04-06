@@ -112,8 +112,9 @@ void MarkerRenderer::render(const RenderState *state) {
             if (!m_lineResources.vertexBuffer || needed > m_lineVertexCapacity) {
                 delete m_lineResources.vertexBuffer;
                 m_lineVertexCapacity = needed + 200;
-                m_lineResources.vertexBuffer = r->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer,
-                                                  m_lineVertexCapacity * sizeof(LineVertex));
+                m_lineResources.vertexBuffer =
+                    r->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer,
+                                 m_lineVertexCapacity * sizeof(LineVertex));
                 m_lineResources.vertexBuffer->create();
             }
             rub->updateDynamicBuffer(m_lineResources.vertexBuffer, 0, needed * sizeof(LineVertex),
@@ -239,13 +240,14 @@ void MarkerRenderer::initializeRHI(QRhi *rhi) {
     m_spriteResources.vertexBuffer->create();
 
     m_spriteResources.uniformBuffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer,
-                                           UNIFORM_ALIGNMENT * MAX_MARKERS);
+                                                     UNIFORM_ALIGNMENT * MAX_MARKERS);
     m_spriteResources.uniformBuffer->create();
 
     m_spriteResources.shaderBindings = rhi->newShaderResourceBindings();
-    m_spriteResources.shaderBindings->setBindings({QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
-        0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
-        m_spriteResources.uniformBuffer, sizeof(SpriteUniformData))});
+    m_spriteResources.shaderBindings->setBindings(
+        {QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
+            0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
+            m_spriteResources.uniformBuffer, sizeof(SpriteUniformData))});
     m_spriteResources.shaderBindings->create();
 
     createLinePipeline(rhi);
