@@ -90,13 +90,12 @@ void PinRenderer::render(const RenderState *state) {
         up = QVector3D::crossProduct(toCamera, right).normalized();
 
         float distToCam = (m_cameraPos - pos).length();
-        
+
         // Scale pin head smoothly from 0 to 1 during the first 20% of its progress
         // This prevents the pin head from popping into existence instantly
         float headGrowth = std::clamp(pin.progress * 5.0F, 0.0F, 1.0F);
-        
-        float scale =
-            30.0F * m_headScale * headGrowth * (distToCam / Utils::CAMERA_DISTANCE);
+
+        float scale = 30.0F * m_headScale * headGrowth * (distToCam / Utils::CAMERA_DISTANCE);
 
         QMatrix4x4 model;
         model.setColumn(0, QVector4D(right * scale, 0));
