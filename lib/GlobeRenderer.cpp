@@ -10,17 +10,7 @@ GlobeRenderer::~GlobeRenderer() {
 }
 
 void GlobeRenderer::releaseResources() {
-    delete m_pipeline;
-    m_pipeline = nullptr;
-
-    delete m_vertexBuffer;
-    m_vertexBuffer = nullptr;
-
-    delete m_uniformBuffer;
-    m_uniformBuffer = nullptr;
-
-    delete m_shaderBindings;
-    m_shaderBindings = nullptr;
+    m_rhiResources.releaseResources();
 
     m_initialized = false;
 }
@@ -43,13 +33,13 @@ void GlobeRenderer::render(const RenderState *state) {
     }
 
     // Rebuild pipeline if render pass changed
-    if (m_needsPipelineRebuild || !m_pipeline ||
-        m_pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
+    if (m_needsPipelineRebuild || !m_rhiResources.pipeline ||
+        m_rhiResources.pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
         createPipeline(r);
         m_needsPipelineRebuild = false;
     }
 
-    if (!m_pipeline || !m_vertexBuffer || m_vertices.empty())
+    if (!m_rhiResources.pipeline || !m_rhiResources.vertexBuffer || m_vertices.empty())
         return;
 
     // Create resource update batch
@@ -59,15 +49,15 @@ void GlobeRenderer::render(const RenderState *state) {
     updateUniformBuffer(resourceUpdates);
 
     // Update vertex buffer if needed
-    if (m_vertexDataChanged && m_vertexBuffer) {
-        resourceUpdates->uploadStaticBuffer(m_vertexBuffer, m_vertices.data());
+    if (m_vertexDataChanged && m_rhiResources.vertexBuffer) {
+        resourceUpdates->uploadStaticBuffer(m_rhiResources.vertexBuffer, m_vertices.data());
         m_vertexDataChanged = false;
     }
 
     cb->resourceUpdate(resourceUpdates);
 
     // Set up graphics pipeline
-    cb->setGraphicsPipeline(m_pipeline);
+    cb->setGraphicsPipeline(m_rhiResources.pipeline);
 
     // Use the item's screen-space rectangle for viewport and scissor
     cb->setViewport(QRhiViewport(m_viewportRect.x(), m_viewportRect.y(), m_viewportRect.width(),
@@ -76,10 +66,10 @@ void GlobeRenderer::render(const RenderState *state) {
                                m_viewportRect.height()));
 
     // Bind shader resources
-    cb->setShaderResources(m_shaderBindings);
+    cb->setShaderResources(m_rhiResources.shaderBindings);
 
     // Bind vertex buffer
-    const QRhiCommandBuffer::VertexInput vertexInputs[] = {{m_vertexBuffer, 0}};
+    const QRhiCommandBuffer::VertexInput vertexInputs[] = {{m_rhiResources.vertexBuffer, 0}};
     cb->setVertexInput(0, 1, vertexInputs);
 
     // Draw
@@ -91,20 +81,20 @@ void GlobeRenderer::initializeRHI(QRhi *rhi) {
         return;
 
     // Create uniform buffer
-    m_uniformBuffer =
+    m_rhiResources.uniformBuffer =
         rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, sizeof(UniformData));
-    if (!m_uniformBuffer->create()) {
+    if (!m_rhiResources.uniformBuffer->create()) {
         qWarning() << "Failed to create uniform buffer";
         return;
     }
 
     // Create shader bindings
-    m_shaderBindings = rhi->newShaderResourceBindings();
-    m_shaderBindings->setBindings({QRhiShaderResourceBinding::uniformBuffer(
+    m_rhiResources.shaderBindings = rhi->newShaderResourceBindings();
+    m_rhiResources.shaderBindings->setBindings({QRhiShaderResourceBinding::uniformBuffer(
         0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
-        m_uniformBuffer)});
+        m_rhiResources.uniformBuffer)});
 
-    if (!m_shaderBindings->create()) {
+    if (!m_rhiResources.shaderBindings->create()) {
         qWarning() << "Failed to create shader resource bindings";
         return;
     }
@@ -115,14 +105,14 @@ void GlobeRenderer::initializeRHI(QRhi *rhi) {
 }
 
 void GlobeRenderer::createPipeline(QRhi *rhi) {
-    delete m_pipeline;
-    m_pipeline = rhi->newGraphicsPipeline();
+    delete m_rhiResources.pipeline;
+    m_rhiResources.pipeline = rhi->newGraphicsPipeline();
 
     // Create vertex buffer if we have data and it doesn't exist
-    if (!m_vertices.empty() && !m_vertexBuffer) {
-        m_vertexBuffer = rhi->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer,
+    if (!m_vertices.empty() && !m_rhiResources.vertexBuffer) {
+        m_rhiResources.vertexBuffer = rhi->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer,
                                         m_vertices.size() * sizeof(Vertex));
-        if (!m_vertexBuffer->create()) {
+        if (!m_rhiResources.vertexBuffer->create()) {
             qWarning() << "Failed to create vertex buffer";
         } else {
             m_vertexDataChanged = true;
@@ -160,7 +150,7 @@ void GlobeRenderer::createPipeline(QRhi *rhi) {
         return;
     }
 
-    m_pipeline->setShaderStages(
+    m_rhiResources.pipeline->setShaderStages(
         {{QRhiShaderStage::Vertex, vertexShader}, {QRhiShaderStage::Fragment, fragmentShader}});
 
     // Define vertex input layout
@@ -177,8 +167,8 @@ void GlobeRenderer::createPipeline(QRhi *rhi) {
          // longitude (location 2)
          {0, 2, QRhiVertexInputAttribute::Float, offsetof(Vertex, longitude)}});
 
-    m_pipeline->setVertexInputLayout(inputLayout);
-    m_pipeline->setShaderResourceBindings(m_shaderBindings);
+    m_rhiResources.pipeline->setVertexInputLayout(inputLayout);
+    m_rhiResources.pipeline->setShaderResourceBindings(m_rhiResources.shaderBindings);
 
     // Use the render target's render pass descriptor
     QRhiRenderTarget *rt = renderTarget();
@@ -186,7 +176,7 @@ void GlobeRenderer::createPipeline(QRhi *rhi) {
         qWarning() << "No render target available";
         return;
     }
-    m_pipeline->setRenderPassDescriptor(rt->renderPassDescriptor());
+    m_rhiResources.pipeline->setRenderPassDescriptor(rt->renderPassDescriptor());
 
     // Enable blending for transparency
     QRhiGraphicsPipeline::TargetBlend blend;
@@ -195,12 +185,12 @@ void GlobeRenderer::createPipeline(QRhi *rhi) {
     blend.dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
     blend.srcAlpha = QRhiGraphicsPipeline::One;
     blend.dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
-    m_pipeline->setTargetBlends({blend});
+    m_rhiResources.pipeline->setTargetBlends({blend});
 
-    m_pipeline->setDepthTest(true);
-    m_pipeline->setDepthWrite(true);
+    m_rhiResources.pipeline->setDepthTest(true);
+    m_rhiResources.pipeline->setDepthWrite(true);
 
-    if (!m_pipeline->create()) {
+    if (!m_rhiResources.pipeline->create()) {
         qWarning() << "Failed to create pipeline";
         return;
     }
@@ -224,7 +214,7 @@ void GlobeRenderer::updateUniformBuffer(QRhiResourceUpdateBatch *batch) {
     u.introDuration = m_introDuration;
     u.introAltitude = m_introAltitude;
 
-    batch->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &u);
+    batch->updateDynamicBuffer(m_rhiResources.uniformBuffer, 0, sizeof(UniformData), &u);
 }
 
 void GlobeRenderer::setBaseColor(const QString &color) {

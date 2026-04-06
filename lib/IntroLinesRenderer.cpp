@@ -11,14 +11,7 @@ IntroLinesRenderer::~IntroLinesRenderer() {
 }
 
 void IntroLinesRenderer::releaseResources() {
-    delete m_pipeline;
-    m_pipeline = nullptr;
-    delete m_vertexBuffer;
-    m_vertexBuffer = nullptr;
-    delete m_uniformBuffer;
-    m_uniformBuffer = nullptr;
-    delete m_bindings;
-    m_bindings = nullptr;
+    m_rhiResources.releaseResources();
     m_initialized = false;
 }
 
@@ -89,16 +82,16 @@ void IntroLinesRenderer::render(const RenderState *state) {
             return;
     }
 
-    if (!m_pipeline || m_pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
+    if (!m_rhiResources.pipeline || m_rhiResources.pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
         createPipeline(r);
     }
-    if (!m_pipeline)
+    if (!m_rhiResources.pipeline)
         return;
 
     QRhiResourceUpdateBatch *rub = r->nextResourceUpdateBatch();
 
     if (!m_vertexDataUploaded) {
-        rub->uploadStaticBuffer(m_vertexBuffer, m_vertices.data());
+        rub->uploadStaticBuffer(m_rhiResources.vertexBuffer, m_vertices.data());
         m_vertexDataUploaded = true;
     }
 
@@ -128,7 +121,7 @@ void IntroLinesRenderer::render(const RenderState *state) {
     u.rotation = rotation;
     u.currentTime = m_time;
     u.duration = m_duration;
-    rub->updateDynamicBuffer(m_uniformBuffer, 0, sizeof(UniformData), &u);
+    rub->updateDynamicBuffer(m_rhiResources.uniformBuffer, 0, sizeof(UniformData), &u);
 
     cb->resourceUpdate(rub);
 
@@ -138,36 +131,36 @@ void IntroLinesRenderer::render(const RenderState *state) {
     cb->setScissor(QRhiScissor(m_viewportRect.x(), m_viewportRect.y(), m_viewportRect.width(),
                                m_viewportRect.height()));
 
-    cb->setGraphicsPipeline(m_pipeline);
-    const QRhiCommandBuffer::VertexInput vb[] = {{m_vertexBuffer, 0}};
+    cb->setGraphicsPipeline(m_rhiResources.pipeline);
+    const QRhiCommandBuffer::VertexInput vb[] = {{m_rhiResources.vertexBuffer, 0}};
     cb->setVertexInput(0, 1, vb);
-    cb->setShaderResources(m_bindings);
+    cb->setShaderResources(m_rhiResources.shaderBindings);
     cb->draw(m_vertices.size(), 1, 0, 0);
 }
 
 void IntroLinesRenderer::initializeRHI(QRhi *rhi) {
     generateLines();
-    m_vertexBuffer = rhi->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer,
+    m_rhiResources.vertexBuffer = rhi->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer,
                                     m_vertices.size() * sizeof(Vertex));
-    m_vertexBuffer->create();
+    m_rhiResources.vertexBuffer->create();
 
-    m_uniformBuffer =
+    m_rhiResources.uniformBuffer =
         rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, sizeof(UniformData));
-    m_uniformBuffer->create();
+    m_rhiResources.uniformBuffer->create();
 
-    m_bindings = rhi->newShaderResourceBindings();
-    m_bindings->setBindings({QRhiShaderResourceBinding::uniformBuffer(
+    m_rhiResources.shaderBindings = rhi->newShaderResourceBindings();
+    m_rhiResources.shaderBindings->setBindings({QRhiShaderResourceBinding::uniformBuffer(
         0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
-        m_uniformBuffer)});
-    m_bindings->create();
+        m_rhiResources.uniformBuffer)});
+    m_rhiResources.shaderBindings->create();
 
     createPipeline(rhi);
     m_initialized = true;
 }
 
 void IntroLinesRenderer::createPipeline(QRhi *rhi) {
-    delete m_pipeline;
-    m_pipeline = rhi->newGraphicsPipeline();
+    delete m_rhiResources.pipeline;
+    m_rhiResources.pipeline = rhi->newGraphicsPipeline();
 
     QFile vs(":/shaders/shaders/introlines.vert.qsb");
     QFile fs(":/shaders/shaders/introlines.frag.qsb");
@@ -181,19 +174,19 @@ void IntroLinesRenderer::createPipeline(QRhi *rhi) {
         fs.close();
     }
 
-    m_pipeline->setShaderStages({{QRhiShaderStage::Vertex, v}, {QRhiShaderStage::Fragment, f}});
+    m_rhiResources.pipeline->setShaderStages({{QRhiShaderStage::Vertex, v}, {QRhiShaderStage::Fragment, f}});
 
     QRhiVertexInputLayout layout;
     layout.setBindings({{sizeof(Vertex)}});
     layout.setAttributes({{0, 0, QRhiVertexInputAttribute::Float3, offsetof(Vertex, position)},
                           {0, 1, QRhiVertexInputAttribute::Float3, offsetof(Vertex, color)},
                           {0, 2, QRhiVertexInputAttribute::Float, offsetof(Vertex, longitude)}});
-    m_pipeline->setVertexInputLayout(layout);
-    m_pipeline->setShaderResourceBindings(m_bindings);
+    m_rhiResources.pipeline->setVertexInputLayout(layout);
+    m_rhiResources.pipeline->setShaderResourceBindings(m_rhiResources.shaderBindings);
 
     QRhiRenderTarget *rt = renderTarget();
     if (rt)
-        m_pipeline->setRenderPassDescriptor(rt->renderPassDescriptor());
+        m_rhiResources.pipeline->setRenderPassDescriptor(rt->renderPassDescriptor());
 
     QRhiGraphicsPipeline::TargetBlend blend;
     blend.enable = true;
@@ -201,12 +194,12 @@ void IntroLinesRenderer::createPipeline(QRhi *rhi) {
     blend.dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
     blend.srcAlpha = QRhiGraphicsPipeline::One;
     blend.dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
-    m_pipeline->setTargetBlends({blend});
+    m_rhiResources.pipeline->setTargetBlends({blend});
 
-    m_pipeline->setDepthTest(true);
-    m_pipeline->setDepthWrite(false);
-    m_pipeline->setTopology(QRhiGraphicsPipeline::Lines);
-    m_pipeline->setLineWidth(2.0F);
+    m_rhiResources.pipeline->setDepthTest(true);
+    m_rhiResources.pipeline->setDepthWrite(false);
+    m_rhiResources.pipeline->setTopology(QRhiGraphicsPipeline::Lines);
+    m_rhiResources.pipeline->setLineWidth(2.0F);
 
-    m_pipeline->create();
+    m_rhiResources.pipeline->create();
 }

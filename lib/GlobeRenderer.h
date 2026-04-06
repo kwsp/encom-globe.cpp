@@ -8,6 +8,7 @@
 #include <QSizeF>
 #include <rhi/qrhi.h>
 #include <vector>
+#include "RhiResources.h"
 
 class GlobeRenderer : public QSGRenderNode {
 public:
@@ -47,10 +48,7 @@ private:
     void updateUniformBuffer(QRhiResourceUpdateBatch *batch);
 
     // RHI resources
-    QRhiGraphicsPipeline *m_pipeline{};
-    QRhiBuffer *m_vertexBuffer{};
-    QRhiBuffer *m_uniformBuffer{};
-    QRhiShaderResourceBindings *m_shaderBindings{};
+    RhiResources m_rhiResources;
 
     // Initialization state
     bool m_initialized{};

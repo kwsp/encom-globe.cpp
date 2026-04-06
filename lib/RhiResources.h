@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QDebug>
 #include <QFile>
 #include <rhi/qrhi.h>

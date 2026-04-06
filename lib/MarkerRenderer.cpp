@@ -11,23 +11,8 @@ MarkerRenderer::~MarkerRenderer() {
 }
 
 void MarkerRenderer::releaseResources() {
-    delete m_linePipeline;
-    m_linePipeline = nullptr;
-    delete m_lineVertexBuffer;
-    m_lineVertexBuffer = nullptr;
-    delete m_lineUniformBuffer;
-    m_lineUniformBuffer = nullptr;
-    delete m_lineBindings;
-    m_lineBindings = nullptr;
-
-    delete m_spritePipeline;
-    m_spritePipeline = nullptr;
-    delete m_spriteVertexBuffer;
-    m_spriteVertexBuffer = nullptr;
-    delete m_spriteUniformBuffer;
-    m_spriteUniformBuffer = nullptr;
-    delete m_spriteBindings;
-    m_spriteBindings = nullptr;
+    m_lineResources.releaseResources();
+    m_spriteResources.releaseResources();
 
     m_initialized = false;
     m_lineVertexCapacity = 0;
@@ -97,24 +82,24 @@ void MarkerRenderer::render(const RenderState *state) {
             return;
     }
 
-    if (m_needsPipelineRebuild || !m_linePipeline ||
-        m_linePipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
+    if (m_needsPipelineRebuild || !m_lineResources.pipeline ||
+        m_lineResources.pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
         createLinePipeline(r);
         createSpritePipeline(r);
         m_needsPipelineRebuild = false;
     }
 
-    if (!m_linePipeline || !m_spritePipeline)
+    if (!m_lineResources.pipeline || !m_spriteResources.pipeline)
         return;
 
     QRhiResourceUpdateBatch *rub = r->nextResourceUpdateBatch();
 
     // Upload sprite quad vertices once
-    if (!m_spriteVertexUploaded && m_spriteVertexBuffer) {
+    if (!m_spriteVertexUploaded && m_spriteResources.vertexBuffer) {
         const float verts[12] = {
             -0.5F, -0.5F, 0.5F, -0.5F, 0.5F, 0.5F, -0.5F, -0.5F, 0.5F, 0.5F, -0.5F, 0.5F,
         };
-        rub->uploadStaticBuffer(m_spriteVertexBuffer, verts);
+        rub->uploadStaticBuffer(m_spriteResources.vertexBuffer, verts);
         m_spriteVertexUploaded = true;
     }
 
@@ -124,14 +109,14 @@ void MarkerRenderer::render(const RenderState *state) {
 
         int needed = (int)m_arcVertices.size();
         if (needed > 0) {
-            if (!m_lineVertexBuffer || needed > m_lineVertexCapacity) {
-                delete m_lineVertexBuffer;
+            if (!m_lineResources.vertexBuffer || needed > m_lineVertexCapacity) {
+                delete m_lineResources.vertexBuffer;
                 m_lineVertexCapacity = needed + 200;
-                m_lineVertexBuffer = r->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer,
+                m_lineResources.vertexBuffer = r->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer,
                                                   m_lineVertexCapacity * sizeof(LineVertex));
-                m_lineVertexBuffer->create();
+                m_lineResources.vertexBuffer->create();
             }
-            rub->updateDynamicBuffer(m_lineVertexBuffer, 0, needed * sizeof(LineVertex),
+            rub->updateDynamicBuffer(m_lineResources.vertexBuffer, 0, needed * sizeof(LineVertex),
                                      m_arcVertices.data());
         }
         m_geometryDirty = false;
@@ -148,7 +133,7 @@ void MarkerRenderer::render(const RenderState *state) {
     lineUbuf.viewDir[1] = m_viewDir.y();
     lineUbuf.viewDir[2] = m_viewDir.z();
 
-    rub->updateDynamicBuffer(m_lineUniformBuffer, 0, sizeof(LineUniformData), &lineUbuf);
+    rub->updateDynamicBuffer(m_lineResources.uniformBuffer, 0, sizeof(LineUniformData), &lineUbuf);
 
     // Update sprite uniforms for each marker
     m_spriteUniformCache.resize(m_markers.size());
@@ -186,7 +171,7 @@ void MarkerRenderer::render(const RenderState *state) {
         su.color[2] = mk.color.blueF();
         su.relativeDepth = QVector3D::dotProduct(pos.normalized(), m_viewDir);
 
-        rub->updateDynamicBuffer(m_spriteUniformBuffer, i * UNIFORM_ALIGNMENT,
+        rub->updateDynamicBuffer(m_spriteResources.uniformBuffer, i * UNIFORM_ALIGNMENT,
                                  sizeof(SpriteUniformData), &su);
     }
 
@@ -202,11 +187,11 @@ void MarkerRenderer::render(const RenderState *state) {
     // (removed redundant setViewport from here)
 
     // --- Draw arc lines ---
-    if (m_lineVertexBuffer && !m_arcs.empty()) {
-        cb->setGraphicsPipeline(m_linePipeline);
-        const QRhiCommandBuffer::VertexInput vb[] = {{m_lineVertexBuffer, 0}};
+    if (m_lineResources.vertexBuffer && !m_arcs.empty()) {
+        cb->setGraphicsPipeline(m_lineResources.pipeline);
+        const QRhiCommandBuffer::VertexInput vb[] = {{m_lineResources.vertexBuffer, 0}};
         cb->setVertexInput(0, 1, vb);
-        cb->setShaderResources(m_lineBindings);
+        cb->setShaderResources(m_lineResources.shaderBindings);
 
         for (const auto &arc : m_arcs) {
             const auto &mk = m_markers[arc.toIdx];
@@ -217,9 +202,9 @@ void MarkerRenderer::render(const RenderState *state) {
     }
 
     // --- Draw marker sprites ---
-    cb->setGraphicsPipeline(m_spritePipeline);
-    if (m_spriteVertexBuffer) {
-        const QRhiCommandBuffer::VertexInput vb[] = {{m_spriteVertexBuffer, 0}};
+    cb->setGraphicsPipeline(m_spriteResources.pipeline);
+    if (m_spriteResources.vertexBuffer) {
+        const QRhiCommandBuffer::VertexInput vb[] = {{m_spriteResources.vertexBuffer, 0}};
         cb->setVertexInput(0, 1, vb);
 
         for (size_t i = 0; i < m_markers.size(); ++i) {
@@ -227,7 +212,7 @@ void MarkerRenderer::render(const RenderState *state) {
                 continue;
             QRhiCommandBuffer::DynamicOffset dynOff = {0,
                                                        static_cast<quint32>(i * UNIFORM_ALIGNMENT)};
-            cb->setShaderResources(m_spriteBindings, 1, &dynOff);
+            cb->setShaderResources(m_spriteResources.shaderBindings, 1, &dynOff);
             cb->draw(6, 1, 0, 0);
         }
     }
@@ -238,30 +223,30 @@ void MarkerRenderer::initializeRHI(QRhi *rhi) {
         return;
 
     // Line uniform buffer (single MVP)
-    m_lineUniformBuffer =
+    m_lineResources.uniformBuffer =
         rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer, sizeof(LineUniformData));
-    m_lineUniformBuffer->create();
+    m_lineResources.uniformBuffer->create();
 
-    m_lineBindings = rhi->newShaderResourceBindings();
-    m_lineBindings->setBindings({QRhiShaderResourceBinding::uniformBuffer(
+    m_lineResources.shaderBindings = rhi->newShaderResourceBindings();
+    m_lineResources.shaderBindings->setBindings({QRhiShaderResourceBinding::uniformBuffer(
         0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
-        m_lineUniformBuffer)});
-    m_lineBindings->create();
+        m_lineResources.uniformBuffer)});
+    m_lineResources.shaderBindings->create();
 
     // Sprite resources
-    m_spriteVertexBuffer =
+    m_spriteResources.vertexBuffer =
         rhi->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer, 6 * 2 * sizeof(float));
-    m_spriteVertexBuffer->create();
+    m_spriteResources.vertexBuffer->create();
 
-    m_spriteUniformBuffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer,
+    m_spriteResources.uniformBuffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer,
                                            UNIFORM_ALIGNMENT * MAX_MARKERS);
-    m_spriteUniformBuffer->create();
+    m_spriteResources.uniformBuffer->create();
 
-    m_spriteBindings = rhi->newShaderResourceBindings();
-    m_spriteBindings->setBindings({QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
+    m_spriteResources.shaderBindings = rhi->newShaderResourceBindings();
+    m_spriteResources.shaderBindings->setBindings({QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
         0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
-        m_spriteUniformBuffer, sizeof(SpriteUniformData))});
-    m_spriteBindings->create();
+        m_spriteResources.uniformBuffer, sizeof(SpriteUniformData))});
+    m_spriteResources.shaderBindings->create();
 
     createLinePipeline(rhi);
     createSpritePipeline(rhi);
@@ -269,8 +254,8 @@ void MarkerRenderer::initializeRHI(QRhi *rhi) {
 }
 
 void MarkerRenderer::createLinePipeline(QRhi *rhi) {
-    delete m_linePipeline;
-    m_linePipeline = rhi->newGraphicsPipeline();
+    delete m_lineResources.pipeline;
+    m_lineResources.pipeline = rhi->newGraphicsPipeline();
 
     // Reuse pin shaders for lines (same format: position + color)
     QFile vs(":/shaders/shaders/pin.vert.qsb");
@@ -287,19 +272,19 @@ void MarkerRenderer::createLinePipeline(QRhi *rhi) {
     if (!vertShader.isValid() || !fragShader.isValid())
         return;
 
-    m_linePipeline->setShaderStages(
+    m_lineResources.pipeline->setShaderStages(
         {{QRhiShaderStage::Vertex, vertShader}, {QRhiShaderStage::Fragment, fragShader}});
 
     QRhiVertexInputLayout layout;
     layout.setBindings({{sizeof(LineVertex)}});
     layout.setAttributes({{0, 0, QRhiVertexInputAttribute::Float3, offsetof(LineVertex, position)},
                           {0, 1, QRhiVertexInputAttribute::Float3, offsetof(LineVertex, color)}});
-    m_linePipeline->setVertexInputLayout(layout);
-    m_linePipeline->setShaderResourceBindings(m_lineBindings);
+    m_lineResources.pipeline->setVertexInputLayout(layout);
+    m_lineResources.pipeline->setShaderResourceBindings(m_lineResources.shaderBindings);
 
     QRhiRenderTarget *rt = renderTarget();
     if (rt)
-        m_linePipeline->setRenderPassDescriptor(rt->renderPassDescriptor());
+        m_lineResources.pipeline->setRenderPassDescriptor(rt->renderPassDescriptor());
 
     QRhiGraphicsPipeline::TargetBlend blend;
     blend.enable = true;
@@ -307,18 +292,18 @@ void MarkerRenderer::createLinePipeline(QRhi *rhi) {
     blend.dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
     blend.srcAlpha = QRhiGraphicsPipeline::One;
     blend.dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
-    m_linePipeline->setTargetBlends({blend});
+    m_lineResources.pipeline->setTargetBlends({blend});
 
-    m_linePipeline->setDepthTest(true);
-    m_linePipeline->setDepthWrite(false);
-    m_linePipeline->setTopology(QRhiGraphicsPipeline::LineStrip);
+    m_lineResources.pipeline->setDepthTest(true);
+    m_lineResources.pipeline->setDepthWrite(false);
+    m_lineResources.pipeline->setTopology(QRhiGraphicsPipeline::LineStrip);
 
-    m_linePipeline->create();
+    m_lineResources.pipeline->create();
 }
 
 void MarkerRenderer::createSpritePipeline(QRhi *rhi) {
-    delete m_spritePipeline;
-    m_spritePipeline = rhi->newGraphicsPipeline();
+    delete m_spriteResources.pipeline;
+    m_spriteResources.pipeline = rhi->newGraphicsPipeline();
 
     // Reuse pintop shaders
     QFile vs(":/shaders/shaders/pintop.vert.qsb");
@@ -335,18 +320,18 @@ void MarkerRenderer::createSpritePipeline(QRhi *rhi) {
     if (!vertShader.isValid() || !fragShader.isValid())
         return;
 
-    m_spritePipeline->setShaderStages(
+    m_spriteResources.pipeline->setShaderStages(
         {{QRhiShaderStage::Vertex, vertShader}, {QRhiShaderStage::Fragment, fragShader}});
 
     QRhiVertexInputLayout layout;
     layout.setBindings({{2 * sizeof(float)}});
     layout.setAttributes({{0, 0, QRhiVertexInputAttribute::Float2, 0}});
-    m_spritePipeline->setVertexInputLayout(layout);
-    m_spritePipeline->setShaderResourceBindings(m_spriteBindings);
+    m_spriteResources.pipeline->setVertexInputLayout(layout);
+    m_spriteResources.pipeline->setShaderResourceBindings(m_spriteResources.shaderBindings);
 
     QRhiRenderTarget *rt = renderTarget();
     if (rt)
-        m_spritePipeline->setRenderPassDescriptor(rt->renderPassDescriptor());
+        m_spriteResources.pipeline->setRenderPassDescriptor(rt->renderPassDescriptor());
 
     QRhiGraphicsPipeline::TargetBlend blend;
     blend.enable = true;
@@ -354,12 +339,12 @@ void MarkerRenderer::createSpritePipeline(QRhi *rhi) {
     blend.dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
     blend.srcAlpha = QRhiGraphicsPipeline::One;
     blend.dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
-    m_spritePipeline->setTargetBlends({blend});
+    m_spriteResources.pipeline->setTargetBlends({blend});
 
-    m_spritePipeline->setDepthTest(true);
-    m_spritePipeline->setDepthWrite(false);
+    m_spriteResources.pipeline->setDepthTest(true);
+    m_spriteResources.pipeline->setDepthWrite(false);
 
-    m_spritePipeline->create();
+    m_spriteResources.pipeline->create();
 }
 
 void MarkerRenderer::setMarkers(const std::vector<MarkerData> &markers) {

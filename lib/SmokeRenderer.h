@@ -5,6 +5,7 @@
 #include <QSGRenderNode>
 #include <rhi/qrhi.h>
 #include <vector>
+#include "RhiResources.h"
 
 struct SmokeSource {
     float lat;
@@ -45,10 +46,7 @@ private:
     void initializeRHI(QRhi *rhi);
     void createPipeline(QRhi *rhi);
 
-    QRhiGraphicsPipeline *m_pipeline{};
-    QRhiBuffer *m_vertexBuffer{};
-    QRhiBuffer *m_uniformBuffer{};
-    QRhiShaderResourceBindings *m_bindings{};
+    RhiResources m_rhiResources;
 
     bool m_initialized{};
     bool m_geometryDirty{};

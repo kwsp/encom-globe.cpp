@@ -5,6 +5,7 @@
 #include <QSGRenderNode>
 #include <rhi/qrhi.h>
 #include <vector>
+#include "RhiResources.h"
 
 struct PinData {
     float lat;
@@ -46,16 +47,8 @@ private:
     void createPipeline(QRhi *rhi);
     void updateBuffers(QRhi *rhi, QRhiResourceUpdateBatch *rub);
 
-    QRhiGraphicsPipeline *m_pipeline = nullptr;
-    QRhiBuffer *m_vertexBuffer = nullptr;
-    QRhiBuffer *m_uniformBuffer = nullptr;
-    QRhiShaderResourceBindings *m_shaderBindings = nullptr;
-
-    // Top sprite resources
-    QRhiGraphicsPipeline *m_topPipeline = nullptr;
-    QRhiBuffer *m_topVertexBuffer = nullptr;
-    QRhiBuffer *m_topUniformBuffer = nullptr;
-    QRhiShaderResourceBindings *m_topShaderBindings = nullptr;
+    RhiResources m_lineResources;
+    RhiResources m_topResources;
 
     bool m_initialized = false;
     bool m_needsPipelineRebuild = false;

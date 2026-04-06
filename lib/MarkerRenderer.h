@@ -5,6 +5,7 @@
 #include <QSGRenderNode>
 #include <rhi/qrhi.h>
 #include <vector>
+#include "RhiResources.h"
 
 struct MarkerData {
     float lat;
@@ -53,17 +54,8 @@ private:
     void createSpritePipeline(QRhi *rhi);
     void rebuildArcGeometry();
 
-    // Line resources
-    QRhiGraphicsPipeline *m_linePipeline = nullptr;
-    QRhiBuffer *m_lineVertexBuffer = nullptr;
-    QRhiBuffer *m_lineUniformBuffer = nullptr;
-    QRhiShaderResourceBindings *m_lineBindings = nullptr;
-
-    // Marker sprite resources
-    QRhiGraphicsPipeline *m_spritePipeline = nullptr;
-    QRhiBuffer *m_spriteVertexBuffer = nullptr;
-    QRhiBuffer *m_spriteUniformBuffer = nullptr;
-    QRhiShaderResourceBindings *m_spriteBindings = nullptr;
+    RhiResources m_lineResources;
+    RhiResources m_spriteResources;
     bool m_spriteVertexUploaded = false;
 
     bool m_initialized = false;

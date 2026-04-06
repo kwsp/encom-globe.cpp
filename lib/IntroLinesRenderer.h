@@ -5,6 +5,7 @@
 #include <QSGRenderNode>
 #include <rhi/qrhi.h>
 #include <vector>
+#include "RhiResources.h"
 
 class IntroLinesRenderer : public QSGRenderNode {
 public:
@@ -34,10 +35,7 @@ private:
     void createPipeline(QRhi *rhi);
     void generateLines();
 
-    QRhiGraphicsPipeline *m_pipeline{};
-    QRhiBuffer *m_vertexBuffer{};
-    QRhiBuffer *m_uniformBuffer{};
-    QRhiShaderResourceBindings *m_bindings{};
+    RhiResources m_rhiResources;
 
     bool m_initialized{};
     bool m_vertexDataUploaded{};
