@@ -13,18 +13,7 @@ SatelliteRenderer::~SatelliteRenderer() {
 }
 
 void SatelliteRenderer::releaseResources() {
-    delete m_pipeline;
-    m_pipeline = nullptr;
-
-    delete m_vertexBuffer;
-    m_vertexBuffer = nullptr;
-
-    delete m_uniformBuffer;
-    m_uniformBuffer = nullptr;
-
-    delete m_shaderBindings;
-    m_shaderBindings = nullptr;
-
+    m_rhiResources.releaseResources();
     m_initialized = false;
 }
 
@@ -46,24 +35,24 @@ void SatelliteRenderer::render(const RenderState *state) {
     }
 
     // Rebuild pipeline if render pass changed
-    if (m_needsPipelineRebuild || !m_pipeline ||
-        m_pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
+    if (m_needsPipelineRebuild || !m_rhiResources.pipeline ||
+        m_rhiResources.pipeline->renderPassDescriptor() != rt->renderPassDescriptor()) {
         createPipeline(r);
         m_needsPipelineRebuild = false;
     }
 
-    if (!m_pipeline)
+    if (!m_rhiResources.pipeline)
         return;
 
     // First frame: upload vertex data
-    if (!m_vertexDataUploaded && m_vertexBuffer) {
+    if (!m_vertexDataUploaded && m_rhiResources.vertexBuffer) {
         const float vertices[12] = {
             -0.5F, -0.5F,                            // Triangle 1
             0.5F,  -0.5F, 0.5F,  0.5F, -0.5F, -0.5F, // Triangle 2
             0.5F,  0.5F,  -0.5F, 0.5F,
         };
         QRhiResourceUpdateBatch *rub = r->nextResourceUpdateBatch();
-        rub->uploadStaticBuffer(m_vertexBuffer, vertices);
+        rub->uploadStaticBuffer(m_rhiResources.vertexBuffer, vertices);
         cb->resourceUpdate(rub);
         m_vertexDataUploaded = true;
     }
@@ -149,8 +138,8 @@ void SatelliteRenderer::render(const RenderState *state) {
     // Upload ALL uniform data in ONE batch before drawing
     QRhiResourceUpdateBatch *rub = r->nextResourceUpdateBatch();
     for (size_t i = 0; i < m_uniformDataCache.size(); ++i) {
-        rub->updateDynamicBuffer(m_uniformBuffer, i * UNIFORM_ALIGNMENT, sizeof(UniformData),
-                                 &m_uniformDataCache[i]);
+        rub->updateDynamicBuffer(m_rhiResources.uniformBuffer, i * UNIFORM_ALIGNMENT,
+                                 sizeof(UniformData), &m_uniformDataCache[i]);
     }
     cb->resourceUpdate(rub);
 
@@ -161,18 +150,18 @@ void SatelliteRenderer::render(const RenderState *state) {
                                m_viewportRect.height()));
 
     // Bind pipeline
-    cb->setGraphicsPipeline(m_pipeline);
+    cb->setGraphicsPipeline(m_rhiResources.pipeline);
 
     // Bind vertex buffer
-    if (m_vertexBuffer) {
-        const QRhiCommandBuffer::VertexInput vb[] = {{m_vertexBuffer, 0}};
+    if (m_rhiResources.vertexBuffer) {
+        const QRhiCommandBuffer::VertexInput vb[] = {{m_rhiResources.vertexBuffer, 0}};
         cb->setVertexInput(0, 1, vb);
     }
 
     // Draw each satellite with dynamic offset
     for (size_t i = 0; i < m_satellites.size(); ++i) {
         QRhiCommandBuffer::DynamicOffset dynOff = {0, static_cast<quint32>(i * UNIFORM_ALIGNMENT)};
-        cb->setShaderResources(m_shaderBindings, 1, &dynOff);
+        cb->setShaderResources(m_rhiResources.shaderBindings, 1, &dynOff);
         cb->draw(6, 1, 0, 0);
     }
 }
@@ -182,29 +171,30 @@ void SatelliteRenderer::initializeRHI(QRhi *rhi) {
         return;
 
     // Create vertex buffer (6 vertices * 2 floats * 4 bytes = 48 bytes)
-    m_vertexBuffer =
+    m_rhiResources.vertexBuffer =
         rhi->newBuffer(QRhiBuffer::Immutable, QRhiBuffer::VertexBuffer, 6 * 2 * sizeof(float));
-    if (!m_vertexBuffer->create()) {
+    if (!m_rhiResources.vertexBuffer->create()) {
         qWarning() << "Failed to create satellite vertex buffer";
         return;
     }
 
     // Create uniform buffer with space for all satellites
     // Use UNIFORM_ALIGNMENT * MAX_SATELLITES for buffer size
-    m_uniformBuffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer,
-                                     UNIFORM_ALIGNMENT * MAX_SATELLITES);
-    if (!m_uniformBuffer->create()) {
+    m_rhiResources.uniformBuffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::UniformBuffer,
+                                                  UNIFORM_ALIGNMENT * MAX_SATELLITES);
+    if (!m_rhiResources.uniformBuffer->create()) {
         qWarning() << "Failed to create satellite uniform buffer";
         return;
     }
 
     // Create shader bindings with dynamic offset
-    m_shaderBindings = rhi->newShaderResourceBindings();
-    m_shaderBindings->setBindings({QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
-        0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
-        m_uniformBuffer, sizeof(UniformData))});
+    m_rhiResources.shaderBindings = rhi->newShaderResourceBindings();
+    m_rhiResources.shaderBindings->setBindings(
+        {QRhiShaderResourceBinding::uniformBufferWithDynamicOffset(
+            0, QRhiShaderResourceBinding::VertexStage | QRhiShaderResourceBinding::FragmentStage,
+            m_rhiResources.uniformBuffer, sizeof(UniformData))});
 
-    if (!m_shaderBindings->create()) {
+    if (!m_rhiResources.shaderBindings->create()) {
         qWarning() << "Failed to create satellite shader resource bindings";
         return;
     }
@@ -215,38 +205,14 @@ void SatelliteRenderer::initializeRHI(QRhi *rhi) {
 }
 
 void SatelliteRenderer::createPipeline(QRhi *rhi) {
-    delete m_pipeline;
-    m_pipeline = rhi->newGraphicsPipeline();
+    delete m_rhiResources.pipeline;
+    m_rhiResources.pipeline = rhi->newGraphicsPipeline();
 
     // Load shaders
-    QFile vsFile(":/shaders/shaders/satellite.vert.qsb");
-    QFile fsFile(":/shaders/shaders/satellite.frag.qsb");
+    auto [vertexShader, fragmentShader] =
+        loadShaders(":/shaders/shaders/satellite.vert.qsb", ":/shaders/shaders/satellite.frag.qsb");
 
-    QShader vertexShader;
-    QShader fragmentShader;
-
-    if (vsFile.open(QIODevice::ReadOnly)) {
-        vertexShader = QShader::fromSerialized(vsFile.readAll());
-        vsFile.close();
-    } else {
-        qWarning() << "Failed to load satellite vertex shader:" << vsFile.errorString();
-        return;
-    }
-
-    if (fsFile.open(QIODevice::ReadOnly)) {
-        fragmentShader = QShader::fromSerialized(fsFile.readAll());
-        fsFile.close();
-    } else {
-        qWarning() << "Failed to load satellite fragment shader:" << fsFile.errorString();
-        return;
-    }
-
-    if (!vertexShader.isValid() || !fragmentShader.isValid()) {
-        qWarning() << "Satellite shaders are not valid";
-        return;
-    }
-
-    m_pipeline->setShaderStages(
+    m_rhiResources.pipeline->setShaderStages(
         {{QRhiShaderStage::Vertex, vertexShader}, {QRhiShaderStage::Fragment, fragmentShader}});
 
     // Vertex input layout
@@ -255,12 +221,12 @@ void SatelliteRenderer::createPipeline(QRhi *rhi) {
 
     inputLayout.setAttributes({{0, 0, QRhiVertexInputAttribute::Float2, offsetof(Vertex, offset)}});
 
-    m_pipeline->setVertexInputLayout(inputLayout);
-    m_pipeline->setShaderResourceBindings(m_shaderBindings);
+    m_rhiResources.pipeline->setVertexInputLayout(inputLayout);
+    m_rhiResources.pipeline->setShaderResourceBindings(m_rhiResources.shaderBindings);
 
     QRhiRenderTarget *rt = renderTarget();
     if (rt) {
-        m_pipeline->setRenderPassDescriptor(rt->renderPassDescriptor());
+        m_rhiResources.pipeline->setRenderPassDescriptor(rt->renderPassDescriptor());
     } else {
         qWarning() << "No render target for satellite pipeline";
         return;
@@ -273,13 +239,13 @@ void SatelliteRenderer::createPipeline(QRhi *rhi) {
     blend.dstColor = QRhiGraphicsPipeline::OneMinusSrcAlpha;
     blend.srcAlpha = QRhiGraphicsPipeline::One;
     blend.dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
-    m_pipeline->setTargetBlends({blend});
+    m_rhiResources.pipeline->setTargetBlends({blend});
 
     // No depth for billboards
-    m_pipeline->setDepthTest(false);
-    m_pipeline->setDepthWrite(false);
+    m_rhiResources.pipeline->setDepthTest(false);
+    m_rhiResources.pipeline->setDepthWrite(false);
 
-    if (!m_pipeline->create()) {
+    if (!m_rhiResources.pipeline->create()) {
         qWarning() << "Failed to create satellite pipeline";
         return;
     }

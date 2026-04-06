@@ -45,13 +45,13 @@ private:
     void initializeRHI(QRhi *rhi);
     void createPipeline(QRhi *rhi);
 
-    QRhiGraphicsPipeline *m_pipeline = nullptr;
-    QRhiBuffer *m_vertexBuffer = nullptr;
-    QRhiBuffer *m_uniformBuffer = nullptr;
-    QRhiShaderResourceBindings *m_bindings = nullptr;
+    QRhiGraphicsPipeline *m_pipeline{};
+    QRhiBuffer *m_vertexBuffer{};
+    QRhiBuffer *m_uniformBuffer{};
+    QRhiShaderResourceBindings *m_bindings{};
 
-    bool m_initialized = false;
-    bool m_geometryDirty = false;
+    bool m_initialized{};
+    bool m_geometryDirty{};
 
     struct ParticleVertex {
         float startLat;

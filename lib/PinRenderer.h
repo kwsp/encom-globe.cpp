@@ -87,6 +87,7 @@ private:
 
     std::vector<PinData> m_pins;
     std::vector<TopUniformData> m_topUniformDataCache;
+
     QMatrix4x4 m_mvp;
     QVector3D m_cameraPos;
     QVector3D m_viewDir;

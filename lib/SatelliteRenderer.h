@@ -6,6 +6,8 @@
 #include <rhi/qrhi.h>
 #include <vector>
 
+#include "RhiResources.h"
+
 struct SatelliteData {
     float lat{};
     float lon{};
@@ -51,16 +53,12 @@ private:
     void initializeRHI(QRhi *rhi);
     void createPipeline(QRhi *rhi);
 
-    // RHI resources
-    QRhiGraphicsPipeline *m_pipeline{};
-    QRhiBuffer *m_vertexBuffer{};
-    QRhiBuffer *m_uniformBuffer{};
-    QRhiShaderResourceBindings *m_shaderBindings{};
+    RhiResources m_rhiResources;
 
-    // Initialization state
-    bool m_initialized{false};
-    bool m_needsPipelineRebuild{false};
-    bool m_vertexDataUploaded{false};
+    // Rhi resources initialization state
+    bool m_initialized{};
+    bool m_needsPipelineRebuild{};
+    bool m_vertexDataUploaded{};
 
     // Vertex data for a single billboard quad (6 vertices for 2 triangles)
     struct Vertex {
@@ -94,5 +92,5 @@ private:
     QSizeF m_size;
 
     // Track if satellites changed
-    bool m_satellitesChanged{false};
+    bool m_satellitesChanged{};
 };
