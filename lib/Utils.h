@@ -10,6 +10,7 @@ namespace Utils {
 
 constexpr float GLOBE_RADIUS = 500.0F;
 constexpr float CAMERA_DISTANCE = 1700.0F;
+constexpr float DEFAULT_FOV = 50.0F;
 
 inline QVector3D latLonToXYZ(float lat, float lon, float scale = GLOBE_RADIUS) {
     const float phi = qDegreesToRadians(90.0F - lat);

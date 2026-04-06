@@ -257,7 +257,7 @@ void Globe::clearMarkers() {
 void Globe::restartAnimation() {
     m_startTime = -1;
     m_tilesLoaded = true; // force shader to update tile intro
-    
+
     // Clear all dynamically added items
     m_satellites.clear();
     m_satellitesChanged = true;
@@ -267,7 +267,7 @@ void Globe::restartAnimation() {
     m_markersChanged = true;
     m_newSmokeSources.clear();
     m_clearSmoke = true;
-    
+
     update();
 }
 
@@ -284,14 +284,14 @@ void Globe::updateFrameData() {
     }
 
     const qint64 currentTimeMs = m_elapsed.elapsed();
-    
+
     // Calculate raw elapsed time and active time (after startup delay)
     float rawTimeMs = static_cast<float>(currentTimeMs - m_startTime);
     float activeTimeMs = std::max(0.0f, rawTimeMs - static_cast<float>(m_startupDelay));
 
     m_frame.timeMs = activeTimeMs;
     m_frame.dt = (activeTimeMs - m_lastActiveTimeMs) / 1000.0f;
-    
+
     m_lastFrameTime = currentTimeMs;
     m_lastActiveTimeMs = activeTimeMs;
 
@@ -310,8 +310,13 @@ void Globe::updateFrameData() {
 
     const float aspect =
         width() > 0 && height() > 0 ? static_cast<float>(width() / height()) : 1.0F;
+    float fov = Utils::DEFAULT_FOV;
+    if (aspect < 1.0F) {
+        constexpr auto pi = std::numbers::pi_v<float>;
+        fov = std::atan(std::tan(fov * pi / 360.0F) / aspect) * 360.0F / pi;
+    }
     m_frame.projection.setToIdentity();
-    m_frame.projection.perspective(50.0F, aspect, 1.0F, m_frame.cameraDist + 500);
+    m_frame.projection.perspective(fov, aspect, 1.0F, m_frame.cameraDist + 500);
 
     m_frame.mvp = m_frame.projection * m_frame.view;
 }
@@ -545,12 +550,12 @@ QSGNode *Globe::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) {
     smokeNode->setViewDir(m_frame.viewDir);
     smokeNode->setTime(static_cast<float>(m_frame.timeMs));
     smokeNode->setViewportRect(pixelRect);
-    
+
     if (m_clearSmoke) {
         smokeNode->clearSources();
         m_clearSmoke = false;
     }
-    
+
     for (const auto &s : m_newSmokeSources)
         smokeNode->addSource(s.lat, s.lon, s.alt);
     m_newSmokeSources.clear();
