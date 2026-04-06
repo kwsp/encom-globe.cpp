@@ -30,7 +30,7 @@ ApplicationWindow {
         
         // Add some test satellites after intro
         Timer {
-            interval: globe.startupDelay
+            interval: globe.startupDelay + globe.introDuration + 500
             running: true
             repeat: false
             onTriggered: {
