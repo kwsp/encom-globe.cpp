@@ -210,7 +210,7 @@ void SatelliteRenderer::createPipeline(QRhi *rhi) {
 
     // Load shaders
     auto [vertexShader, fragmentShader] =
-        loadShaders(":/shaders/shaders/satellite.vert.qsb", ":/shaders/shaders/satellite.frag.qsb");
+        RhiResources::loadShaders(":/shaders/shaders/satellite.vert.qsb", ":/shaders/shaders/satellite.frag.qsb");
 
     m_rhiResources.pipeline->setShaderStages(
         {{QRhiShaderStage::Vertex, vertexShader}, {QRhiShaderStage::Fragment, fragmentShader}});
