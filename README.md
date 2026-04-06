@@ -1,6 +1,6 @@
 # Encom Globe in C++/Qt Quick
 
-A high-performance C++ port of [encom-globe](https://github.com/arscan/encom-globe) using **Qt 6**, **Qt Quick**, and **Qt RHI**.
+A high-performance C++ port of [encom-globe](https://github.com/arscan/encom-globe) using **Qt 6**, **Qt Quick**, and **Qt RHI**. The project exposes a reusable `Globe` QML object that can be seamlessly embedded into any QML project.
 
 https://github.com/user-attachments/assets/be7c8459-7082-4af1-9314-514798293895
 
