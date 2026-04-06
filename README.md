@@ -2,6 +2,8 @@
 
 A high-performance C++ port of [encom-globe](https://github.com/arscan/encom-globe) using **Qt 6**, **Qt Quick**, and **Qt RHI**.
 
+https://github.com/user-attachments/assets/be7c8459-7082-4af1-9314-514798293895
+
 This project demonstrates how to build complex 3D visualizations in Qt, leveraging Qt's modern Rendering Hardware Interface (RHI) for cross-platform compatibility (Metal on macOS, Vulkan on Linux, D3D on Windows).
 
 ## Features
