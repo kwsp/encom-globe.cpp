@@ -9,11 +9,11 @@ ApplicationWindow {
     height: 800
     title: "Encom Globe Example"
     color: "#000000"
-    
+
     Globe {
         id: globe
         anchors.fill: parent
-        
+
         startupDelay: 0 // n second pause before animations begin
         dayLength: 28000  // ms per rotation
         scale: 1.0        // zoom factor
@@ -27,7 +27,7 @@ ApplicationWindow {
         pinHeadSize: 0.2  // pin head scale multiplier
         showLabels: false
         introDuration: 2000 // ms
-        
+
         // Add some test satellites after intro
         Timer {
             id: spawnTimer
@@ -35,65 +35,63 @@ ApplicationWindow {
             running: true
             repeat: false
             onTriggered: {
-                globe.addSatellite(40.7128, -74.0060, 1.2)  // New York
+                globe.addSatellite(40.7128, -74.0060, 1.2);  // New York
                 // globe.addSatellite(51.5074, -0.1278, 1.3)   // London
                 // globe.addSatellite(35.6762, 139.6503, 1.15) // Tokyo
-                globe.addSatellite(-33.8688, 151.2093, 1.25) // Sydney
+                globe.addSatellite(-33.8688, 151.2093, 1.25); // Sydney
                 // globe.addSatellite(55.7558, 37.6173, 1.2)   // Moscow
-                
+
                 // Add pins
-                globe.addPin(48.8566, 2.3522, "Paris")
-                globe.addPin(-23.5505, -46.6333, "Sao Paulo")
-                
+                globe.addPin(48.8566, 2.3522, "Paris");
+                globe.addPin(-23.5505, -46.6333, "Sao Paulo");
+
                 // Add markers
-                globe.addMarker(40.7128, -74.0060, "NYC", false)
-                globe.addMarker(34.0522, -118.2437, "LA", true)
-                globe.addMarker(35.6762, 139.6503, "Tokyo", true)
-                globe.addMarker(-33.8688, 151.2093, "Sydney", true)
+                globe.addMarker(40.7128, -74.0060, "NYC", false);
+                globe.addMarker(34.0522, -118.2437, "LA", true);
+                globe.addMarker(35.6762, 139.6503, "Tokyo", true);
+                globe.addMarker(-33.8688, 151.2093, "Sydney", true);
             }
         }
-        
+
         // Enable mouse interaction
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.LeftButton
-            
+
             property real lastX: 0
             property real lastY: 0
-            
-            onPressed: (mouse) => {
-                lastX = mouse.x
-                lastY = mouse.y
+
+            onPressed: mouse => {
+                lastX = mouse.x;
+                lastY = mouse.y;
             }
-            
-            onPositionChanged: (mouse) => {
+
+            onPositionChanged: mouse => {
                 if (pressed) {
                     // Adjust rotation offset based on horizontal drag
-                    let dx = mouse.x - lastX
-                    globe.rotationOffset += dx * 0.005
-                    
+                    let dx = mouse.x - lastX;
+                    globe.rotationOffset += dx * 0.005;
+
                     // Adjust view angle based on vertical drag
-                    let dy = mouse.y - lastY
-                    globe.viewAngle = Math.max(-1.57, Math.min(1.57, 
-                        globe.viewAngle + dy * 0.005))
-                    
-                    lastX = mouse.x
-                    lastY = mouse.y
+                    let dy = mouse.y - lastY;
+                    globe.viewAngle = Math.max(-1.57, Math.min(1.57, globe.viewAngle + dy * 0.005));
+
+                    lastX = mouse.x;
+                    lastY = mouse.y;
                 }
             }
-            
-            onWheel: (wheel) => {
+
+            onWheel: wheel => {
                 // Zoom with scroll wheel
-                globe.scale = Math.max(0.3, Math.min(3.0, 
-                    globe.scale + wheel.angleDelta.y * 0.001))
+                globe.scale = Math.max(0.3, Math.min(3.0, globe.scale + wheel.angleDelta.y * 0.001));
             }
         }
-        
+
         Repeater {
             model: globe.pinLabels
             delegate: Text {
                 visible: globe.showLabels
-                x: modelData.x - width/2
+                x: modelData.x - width / 2
                 y: modelData.y - height
                 text: modelData.text
                 color: "#FFFFFF"
@@ -106,21 +104,21 @@ ApplicationWindow {
             }
         }
     }
-    
+
     // Info overlay
     Column {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.margins: 20
         spacing: 10
-        
+
         Label {
             text: "ENCOM GLOBE"
             font.family: "Inconsolata, monospace"
             font.pixelSize: 24
             color: "#ffcc00"
         }
-        
+
         Label {
             text: "Drag: Adjust view angle\nScroll: Zoom"
             font.family: "Inconsolata, monospace"
@@ -128,37 +126,95 @@ ApplicationWindow {
             color: "#8FD8D8"
         }
     }
-    
-    // Controls panel
+
+    // Controls panel (collapsible)
     Rectangle {
+        id: controlsPanel
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.margins: 20
         width: 200
-        height: controlsColumn.height + 20
         color: "#1a1a1a"
         radius: 5
-        
-        Column {
-            id: controlsColumn
-            anchors.centerIn: parent
-            width: parent.width - 20
-            spacing: 10
-            
+        clip: true
+
+        property bool expanded: true
+        property int headerHeight: 36
+        property int collapsedHeight: headerHeight
+        property int expandedHeight: headerHeight + controlsColumn.height + 10
+
+        height: controlsPanel.expanded ? expandedHeight : collapsedHeight
+
+        Behavior on height {
+            NumberAnimation {
+                duration: 250
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        // Header (always visible, clickable to toggle)
+        Rectangle {
+            id: header
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: controlsPanel.headerHeight
+            color: "transparent"
+            radius: 5
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: controlsPanel.expanded = !controlsPanel.expanded
+            }
+
             Label {
+                anchors.left: parent.left
+                anchors.leftMargin: 10
+                anchors.verticalCenter: parent.verticalCenter
                 text: "Controls"
                 font.family: "Inconsolata, monospace"
                 font.pixelSize: 16
                 color: "#ffcc00"
             }
-            
+
+            Text {
+                anchors.right: parent.right
+                anchors.rightMargin: 10
+                anchors.verticalCenter: parent.verticalCenter
+                text: controlsPanel.expanded ? "▼" : "▶"
+                font.family: "Inconsolata, monospace"
+                font.pixelSize: 14
+                color: "#ffcc00"
+
+                rotation: controlsPanel.expanded ? 0 : -90
+
+                Behavior on rotation {
+                    NumberAnimation {
+                        duration: 250
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            }
+        }
+
+        // Controls content (animates in/out via parent clipping)
+        Column {
+            id: controlsColumn
+            anchors.top: header.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 10
+            anchors.rightMargin: 10
+            spacing: 10
+
             Label {
                 text: "Scale: " + globe.scale.toFixed(2)
                 font.family: "Inconsolata, monospace"
                 font.pixelSize: 12
                 color: "#8FD8D8"
             }
-            
+
             Slider {
                 width: parent.width
                 from: 0.3
@@ -166,14 +222,14 @@ ApplicationWindow {
                 value: globe.scale
                 onValueChanged: globe.scale = value
             }
-            
+
             Label {
                 text: "Rotation: " + (globe.dayLength / 1000).toFixed(1) + "s"
                 font.family: "Inconsolata, monospace"
                 font.pixelSize: 12
                 color: "#8FD8D8"
             }
-            
+
             Slider {
                 width: parent.width
                 from: 5000
@@ -181,14 +237,14 @@ ApplicationWindow {
                 value: globe.dayLength
                 onValueChanged: globe.dayLength = value
             }
-            
+
             Label {
                 text: "Pin Head Size: " + globe.pinHeadSize.toFixed(2)
                 font.family: "Inconsolata, monospace"
                 font.pixelSize: 12
                 color: "#8FD8D8"
             }
-            
+
             Slider {
                 width: parent.width
                 from: 0.1
@@ -203,7 +259,7 @@ ApplicationWindow {
                 font.pixelSize: 12
                 color: "#8FD8D8"
             }
-            
+
             Slider {
                 width: parent.width
                 from: 0.1
@@ -211,21 +267,22 @@ ApplicationWindow {
                 value: globe.markerSize
                 onValueChanged: globe.markerSize = value
             }
-            
+
             Label {
                 text: "Theme"
                 font.family: "Inconsolata, monospace"
                 font.pixelSize: 14
                 color: "#ffcc00"
             }
-            
+
             Row {
                 spacing: 5
                 property var colors: ["#ffcc00", "#00eeee", "#ff4444", "#44ff44", "#ffffff"]
                 Repeater {
                     model: parent.colors
                     delegate: Rectangle {
-                        width: 30; height: 30
+                        width: 30
+                        height: 30
                         color: modelData
                         border.color: globe.baseColor === modelData ? "white" : "transparent"
                         border.width: 2
@@ -233,8 +290,8 @@ ApplicationWindow {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: {
-                                globe.baseColor = modelData
-                                globe.markerColor = modelData
+                                globe.baseColor = modelData;
+                                globe.markerColor = modelData;
                             }
                         }
                     }
@@ -245,8 +302,8 @@ ApplicationWindow {
                 text: "Restart Animation"
                 width: parent.width
                 onClicked: {
-                    globe.restartAnimation()
-                    spawnTimer.restart()
+                    globe.restartAnimation();
+                    spawnTimer.restart();
                 }
             }
 
@@ -254,12 +311,12 @@ ApplicationWindow {
                 text: "Drop random pin"
                 width: parent.width
                 onClicked: {
-                    var lat = Math.random() * 180 - 90
-                    var lon = Math.random() * 360 - 180
-                    globe.addPin(lat, lon, "User Pin")
+                    var lat = Math.random() * 180 - 90;
+                    var lon = Math.random() * 360 - 180;
+                    globe.addPin(lat, lon, "User Pin");
                 }
             }
-            
+
             CheckBox {
                 text: "Show Labels"
                 checked: globe.showLabels
