@@ -38,6 +38,7 @@ public:
     void setSize(const QSizeF &size) { m_size = size; }
 
     void addSource(float lat, float lon, float altitude);
+    void clearSources();
 
 private:
     static constexpr int MAX_PARTICLES = 5000;

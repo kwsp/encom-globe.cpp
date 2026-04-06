@@ -164,6 +164,9 @@ public:
     Q_INVOKABLE void addSatellite(qreal lat, qreal lon,
                                   qreal altitude); // altitude as multiplier (e.g. 1.2)
     Q_INVOKABLE void clearSatellites();
+    Q_INVOKABLE void clearPins();
+    Q_INVOKABLE void clearMarkers();
+    Q_INVOKABLE void restartAnimation();
 
 Q_SIGNALS:
     void dayLengthChanged();
@@ -245,6 +248,7 @@ private:
     // Markers
     std::vector<MarkerData> m_markers;
     bool m_markersChanged{false};
+    bool m_clearSmoke{false};
 
     // Smoke
     struct NewSmokeSource {

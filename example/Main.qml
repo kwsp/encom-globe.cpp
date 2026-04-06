@@ -14,7 +14,7 @@ ApplicationWindow {
         id: globe
         anchors.fill: parent
         
-        startupDelay: 2000 // 2 second pause before animations begin
+        startupDelay: 0 // 2 second pause before animations begin
         dayLength: 28000  // ms per rotation
         scale: 1.0        // zoom factor
         viewAngle: 0.1    // tilt in radians
@@ -30,6 +30,7 @@ ApplicationWindow {
         
         // Add some test satellites after intro
         Timer {
+            id: spawnTimer
             interval: globe.startupDelay + globe.introDuration + 500
             running: true
             repeat: false
@@ -237,6 +238,15 @@ ApplicationWindow {
                             }
                         }
                     }
+                }
+            }
+
+            Button {
+                text: "Restart Animation"
+                width: parent.width
+                onClicked: {
+                    globe.restartAnimation()
+                    spawnTimer.restart()
                 }
             }
 

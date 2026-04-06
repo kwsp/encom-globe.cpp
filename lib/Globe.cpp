@@ -242,6 +242,35 @@ void Globe::clearSatellites() {
     update();
 }
 
+void Globe::clearPins() {
+    m_pins.clear();
+    m_pinsChanged = true;
+    update();
+}
+
+void Globe::clearMarkers() {
+    m_markers.clear();
+    m_markersChanged = true;
+    update();
+}
+
+void Globe::restartAnimation() {
+    m_startTime = -1;
+    m_tilesLoaded = true; // force shader to update tile intro
+    
+    // Clear all dynamically added items
+    m_satellites.clear();
+    m_satellitesChanged = true;
+    m_pins.clear();
+    m_pinsChanged = true;
+    m_markers.clear();
+    m_markersChanged = true;
+    m_newSmokeSources.clear();
+    m_clearSmoke = true;
+    
+    update();
+}
+
 void Globe::scheduleUpdate() {
     update();
 }
@@ -516,6 +545,12 @@ QSGNode *Globe::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *data) {
     smokeNode->setViewDir(m_frame.viewDir);
     smokeNode->setTime(static_cast<float>(m_frame.timeMs));
     smokeNode->setViewportRect(pixelRect);
+    
+    if (m_clearSmoke) {
+        smokeNode->clearSources();
+        m_clearSmoke = false;
+    }
+    
     for (const auto &s : m_newSmokeSources)
         smokeNode->addSource(s.lat, s.lon, s.alt);
     m_newSmokeSources.clear();

@@ -32,6 +32,14 @@ void SmokeRenderer::addSource(float lat, float lon, float altitude) {
     m_geometryDirty = true;
 }
 
+void SmokeRenderer::clearSources() {
+    for (auto &p : m_particles) {
+        p.isActive = 0.0F;
+    }
+    m_nextParticleIdx = 0;
+    m_geometryDirty = true;
+}
+
 void SmokeRenderer::render(const RenderState *state) {
     QRhiRenderTarget *rt = renderTarget();
     QRhiCommandBuffer *cb = commandBuffer();
