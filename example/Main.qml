@@ -7,14 +7,14 @@ ApplicationWindow {
     visible: true
     width: 1200
     height: 800
-    title: "Encom Globe"
+    title: "Encom Globe Example"
     color: "#000000"
     
     Globe {
         id: globe
         anchors.fill: parent
         
-        startupDelay: 0 // 2 second pause before animations begin
+        startupDelay: 0 // n second pause before animations begin
         dayLength: 28000  // ms per rotation
         scale: 1.0        // zoom factor
         viewAngle: 0.1    // tilt in radians
