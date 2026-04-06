@@ -1,9 +1,9 @@
 #pragma once
 
+#include <QColor>
+#include <QMatrix4x4>
 #include <QSGRenderNode>
 #include <rhi/qrhi.h>
-#include <QMatrix4x4>
-#include <QColor>
 #include <vector>
 
 struct PinData {
@@ -20,38 +20,42 @@ struct PinData {
 class PinRenderer : public QSGRenderNode {
 public:
     PinRenderer();
+    PinRenderer(PinRenderer &&) = delete;
+    PinRenderer(const PinRenderer &) = delete;
+    PinRenderer &operator=(PinRenderer &&) = delete;
+    PinRenderer &operator=(const PinRenderer &) = delete;
     ~PinRenderer() override;
 
     StateFlags changedStates() const override { return BlendState; }
     RenderingFlags flags() const override { return BoundedRectRendering | DepthAwareRendering; }
     void prepare() override {}
-    void render(const RenderState* state) override;
+    void render(const RenderState *state) override;
     void releaseResources() override;
     QRectF rect() const override { return {0, 0, m_size.width(), m_size.height()}; }
 
-    void setMVP(const QMatrix4x4& mvp) { m_mvp = mvp; }
-    void setCameraPosition(const QVector3D& pos) { m_cameraPos = pos; }
-    void setViewDir(const QVector3D& dir) { m_viewDir = dir; }
+    void setMVP(const QMatrix4x4 &mvp) { m_mvp = mvp; }
+    void setCameraPosition(const QVector3D &pos) { m_cameraPos = pos; }
+    void setViewDir(const QVector3D &dir) { m_viewDir = dir; }
     void setHeadScale(float scale) { m_headScale = scale; }
-    void setViewportRect(const QRect& rect) { m_viewportRect = rect; }
-    void setSize(const QSizeF& size) { m_size = size; }
-    void setPins(const std::vector<PinData>& pins);
+    void setViewportRect(const QRect &rect) { m_viewportRect = rect; }
+    void setSize(const QSizeF &size) { m_size = size; }
+    void setPins(const std::vector<PinData> &pins);
 
 private:
-    void initializeRHI(QRhi* rhi);
-    void createPipeline(QRhi* rhi);
-    void updateBuffers(QRhi* rhi, QRhiResourceUpdateBatch* rub);
+    void initializeRHI(QRhi *rhi);
+    void createPipeline(QRhi *rhi);
+    void updateBuffers(QRhi *rhi, QRhiResourceUpdateBatch *rub);
 
-    QRhiGraphicsPipeline* m_pipeline = nullptr;
-    QRhiBuffer* m_vertexBuffer = nullptr;
-    QRhiBuffer* m_uniformBuffer = nullptr;
-    QRhiShaderResourceBindings* m_shaderBindings = nullptr;
+    QRhiGraphicsPipeline *m_pipeline = nullptr;
+    QRhiBuffer *m_vertexBuffer = nullptr;
+    QRhiBuffer *m_uniformBuffer = nullptr;
+    QRhiShaderResourceBindings *m_shaderBindings = nullptr;
 
     // Top sprite resources
-    QRhiGraphicsPipeline* m_topPipeline = nullptr;
-    QRhiBuffer* m_topVertexBuffer = nullptr;
-    QRhiBuffer* m_topUniformBuffer = nullptr;
-    QRhiShaderResourceBindings* m_topShaderBindings = nullptr;
+    QRhiGraphicsPipeline *m_topPipeline = nullptr;
+    QRhiBuffer *m_topVertexBuffer = nullptr;
+    QRhiBuffer *m_topUniformBuffer = nullptr;
+    QRhiShaderResourceBindings *m_topShaderBindings = nullptr;
 
     bool m_initialized = false;
     bool m_needsPipelineRebuild = false;
@@ -74,11 +78,11 @@ private:
     }; // 80 bytes
 
     struct TopUniformData {
-        float mvp[16];        // offset 0
-        float color[3];       // offset 64
-        float relativeDepth;  // offset 76
-        float viewDir[3];     // offset 80
-        float padding2;       // offset 92
+        float mvp[16];       // offset 0
+        float color[3];      // offset 64
+        float relativeDepth; // offset 76
+        float viewDir[3];    // offset 80
+        float padding2;      // offset 92
     }; // Total: 96 bytes, std140 aligned
 
     std::vector<PinData> m_pins;

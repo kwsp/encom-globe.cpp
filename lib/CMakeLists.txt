@@ -14,7 +14,7 @@ target_sources(${LIB_NAME} PRIVATE
     MarkerRenderer.h MarkerRenderer.cpp
     SmokeRenderer.h SmokeRenderer.cpp
     IntroLinesRenderer.h IntroLinesRenderer.cpp
-    Utils.h Utils.cpp
+    Utils.h
 )
 
 qt_add_qml_module(${LIB_NAME}

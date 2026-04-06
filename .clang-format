@@ -1,3 +1,21 @@
----
+Language: Cpp
 BasedOnStyle: LLVM
----
+IndentWidth: 4
+UseTab: Never
+
+# 1TBS / K&R style: Braces on the same line for functions, classes, and control statements
+BreakBeforeBraces: Attach
+
+# Keeps access modifiers (public/private) flush with the class definition
+AccessModifierOffset: -4
+
+# Standard column limit for modern Qt projects
+ColumnLimit: 100
+
+# Optional: allows simple constructors like PinRenderer() = default; on one line
+AllowShortFunctionsOnASingleLine: Inline
+
+# Convert float and integer suffixes to uppercase (e.g., 0.1f -> 0.1F, 100u -> 100U)
+# Not supported by Apple Clang version 21. This flag was added in Clang 13
+#NumericLiteralCase:
+#  Suffix: Upper
